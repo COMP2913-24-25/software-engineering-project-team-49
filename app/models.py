@@ -1,6 +1,6 @@
 from app import db
 
-class user(db.model):
+class user(db.Model):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -13,7 +13,7 @@ class user(db.model):
     items = db.relationship('item', )
 
 
-class item(db.model):
+class item(db.Model):
     __tablename__ = 'items'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50))
@@ -23,46 +23,46 @@ class item(db.model):
     auction_end = db.Column(db.DateTime)
     authenticated = db.Column(db.Boolean)
 
-class bid(db.model):
+class bid(db.Model):
     __tablename__ = 'bids'
     id = db.Column(db.Integer, primary_key=True)
     amount = db.Column(db.Integer)
     bid_time = db.Column (db.DateTime)
 
-class payment(db.model):
+class payment(db.Model):
     __tablename__ = 'payments'
     id = db.Column(db.Integer, primary_key=True)
     amount_paid = db.Column(db.Integer)
     payment_status = db.Column(db.Boolean)
     payment_time = db.Column(db.DateTime)
 
-class notification(db.model):
+class notification(db.Model):
     __tablename__ = 'notifications'
     id = db.Column(db.Integer, primary_key=True)
     message = db.Column(db.String(200))
     created_at = db.Column(db.DateTime)
     is_read = db.Column(db.Boolean)
 
-class request(db.model):
+class request(db.Model):
     __tablename__ = 'requests'
     id = db.Column(db.Integer, primary_key=True)
     status = db.Column(db.Boolean)
     fee_percentage = db.Column(db.Integer)
     created_at = db.Column(db.DateTime)
 
-class expertAvailablity(db.model):
+class expertAvailablity(db.Model):
     __tablename__ = 'experts'
     id = db.Column(db.Integer, primary_key=True)
     start_time = db.Column(db.DateTime)
     end_time = db.Column(db.DateTime)
 
-class setting(db.model):
+class setting(db.Model):
     __tablename__ = 'settings'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50))
     value = db.Column(db.Integer)
 
-class report(db.model):
+class report(db.Model):
     __tablename__ = 'reports'
     id = db.Column(db.Integer, primary_key=True)
     week_start = db.Column(db.DateTime)

@@ -1,16 +1,20 @@
 from app import app, models, db
-from flask import render_template, flash, request, redirect, url_for, jsonify
+from flask import render_template, flash, request, redirect, url_for
 from flask_login import login_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from .forms import PostForm, SignUpForm, LogInForm
+from .forms import SignUpForm, LogInForm
 
 @app.route('/')
+@app.route('/welcome')
+def welcome():
+	return render_template('welcome.html')
+
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
 	form = SignUpForm()
 	if form.validate_on_submit():
 		hashed_password = generate_password_hash(form.password.data)
-		new_user = models.User(username=form.username.data, password=hashed_password)
+		new_user = models.user(username=form.username.data, password=hashed_password, role=role)
 		db.session.add(new_user)
 		db.session.commit()
 		flash('Account successfully created! You will now be redirected to the login page!')
@@ -21,10 +25,10 @@ def signup():
 def login():
 	form = LogInForm()
 	if form.validate_on_submit():
-		user = models.User.query.filter_by(username=form.username.data).first()
-		if user and check_password_hash(user.password, form.password.data):
+		User = models.user.query.filter_by(username=form.username.data).first()
+		if User and check_password_hash(User.password, form.password.data):
 			flash('Successfully Logged In!')
-			login_user(user)
+			login_user(User)
 			return(redirect(url_for('index')))
 		else:
 			flash("Invalid Username or Password. Please try again.")
