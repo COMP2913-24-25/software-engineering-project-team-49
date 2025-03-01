@@ -1,5 +1,8 @@
-from app import app
+from flask import Blueprint
 
-@app.route('/')
-def index():
-    return "Hello World!!!"
+views = Blueprint("views", __name__)
+
+# Example route
+@views.route("/")
+def home():
+    return "Hello, world!"
