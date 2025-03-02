@@ -11,6 +11,7 @@ def create_app():
     db.init_app(app)
     Migrate(app, db)
 
+    from app import models
     from app.views import views  # Import blueprint
     app.register_blueprint(views)
 

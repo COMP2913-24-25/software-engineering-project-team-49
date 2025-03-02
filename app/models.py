@@ -47,15 +47,16 @@ class User(db.Model):
     card_expiry = db.Column(db.String(10))
     
     # Relationships
-    items_sold = db.relationship('Item', backref='seller', lazy='dynamic', foreign_keys='Item.seller_id')
-    items_won = db.relationship('Item', backref='winner', lazy='dynamic', foreign_keys='Item.winner_id')
-    bids = db.relationship('Bid', backref='bidder', lazy='dynamic')
+    items_sold = db.relationship('Item', backref='seller', lazy='dynamic', foreign_keys='Item.seller_id', cascade="all, delete-orphan")
+    items_won = db.relationship('Item', backref='winner', lazy='dynamic', foreign_keys='Item.winner_id', cascade="all, delete-orphan")
+    bids = db.relationship('Bid', backref='bidder', lazy='dynamic', cascade="all, delete-orphan")
     watched_items = db.relationship('Item', secondary=user_watched_auctions, lazy='dynamic',
                                    backref=db.backref('watchers', lazy='dynamic'))
-    expertise = db.relationship('ExpertCategory', backref='expert', lazy='dynamic')
-    availability = db.relationship('ExpertAvailability', backref='expert', lazy='dynamic')
+    expertise = db.relationship('ExpertCategory', backref='expert', lazy='dynamic', cascade="all, delete-orphan")
+    availability = db.relationship('ExpertAvailability', backref='expert', lazy='dynamic', cascade="all, delete-orphan")
     authentication_requests = db.relationship('AuthenticationRequest', backref='expert', lazy='dynamic',
                                              foreign_keys='AuthenticationRequest.expert_id')
+    notification = db.relationship('Notification', backref='self', lazy='dynamic', cascade="all, delete-orphan")
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -131,9 +132,10 @@ class Item(db.Model):
     is_authenticated = db.Column(db.Boolean, default=False)
     
     # Relationships
-    bids = db.relationship('Bid', backref='item', lazy='dynamic')
-    images = db.relationship('ItemImage', backref='item', lazy='dynamic')
-    authentication_request = db.relationship('AuthenticationRequest', backref='item', uselist=False)
+    bids = db.relationship('Bid', backref='item', lazy='dynamic', cascade="all, delete-orphan")
+    images = db.relationship('ItemImage', backref='item', lazy='dynamic', cascade="all, delete-orphan")
+    authentication_request = db.relationship('AuthenticationRequest', backref='item', uselist=False, cascade="all, delete-orphan")
+    notifications = db.relationship('Notification', lazy='dynamic', cascade="all, delete-orphan")
     
     def is_active(self):
         now = datetime.utcnow()
