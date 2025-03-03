@@ -10,7 +10,7 @@ class SignUpForm(FlaskForm):
     role = SelectField('role', choices=[('1', 'User'), ('2', 'Expert'), ('3', 'Manager')], validators=[DataRequired()])
     submit = SubmitField('Sign Up')
     def validate_username(self, username):
-        User = user.query.filter_by(username=username.data).first()
+        User = User.query.filter_by(username=username.data).first()
         if User:
             raise ValidationError("Username already taken.")
         
