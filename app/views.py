@@ -14,7 +14,7 @@ def signup():
 	form = SignUpForm()
 	if form.validate_on_submit():
 		hashed_password = generate_password_hash(form.password.data)
-		new_user = models.user(username=form.username.data, password=hashed_password, role=role)
+		new_user = models.user(username=form.username.data, password=hashed_password, role=form.role.data)
 		db.session.add(new_user)
 		db.session.commit()
 		flash('Account successfully created! You will now be redirected to the login page!')
@@ -29,7 +29,7 @@ def login():
 		if User and check_password_hash(User.password, form.password.data):
 			flash('Successfully Logged In!')
 			login_user(User)
-			return(redirect(url_for('index')))
+			return(redirect(url_for('home')))
 		else:
 			flash("Invalid Username or Password. Please try again.")
 	return render_template('login.html', form=form)

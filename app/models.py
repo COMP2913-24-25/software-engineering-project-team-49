@@ -8,10 +8,6 @@ class user(db.Model):
     password = db.Column(db.String(200), nullable=False)
     role = db.Column(db.Integer, default = 1) #1 = user, 2 = expert 3 = manager
 
-    #relationships
-    notifications = db.relationship('notification', back_populates='author', cascade="all, delete-orphan")
-    items = db.relationship('item', )
-
 
 class item(db.Model):
     __tablename__ = 'items'
