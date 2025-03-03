@@ -24,7 +24,7 @@ jobs:
       - name: Set Up SQLite Database
         run: |
           source venv/bin/activate
-          flask db upgrade  # Runs migrations (if using Flask-Migrate)
+          flask db upgrade  # Runs migrations
 
       - name: Run Tests
         run: |
