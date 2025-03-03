@@ -33,3 +33,7 @@ def login():
 		else:
 			flash("Invalid Username or Password. Please try again.")
 	return render_template('login.html', form=form)
+
+@app.route('/home')
+def home():
+    return render_template('home.html')
