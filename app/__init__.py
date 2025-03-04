@@ -6,6 +6,7 @@ from flask_wtf.csrf import CSRFProtect
 from flask_login import LoginManager
 
 db = SQLAlchemy()
+login_manager = LoginManager()
 
 def create_app():
     app = Flask(__name__)
@@ -18,15 +19,14 @@ def create_app():
     Migrate(app, db)
 
     login_manager = LoginManager(app)
-    login_manager.login_view = 'login'
-    login_manager.login_message_category = 'info'
+    login_manager.init_app(app)
 
     @login_manager.user_loader
     def load_user(user_id):
-        return models.user.query.get(int(user_id))
+        return models.User.query.get(int(user_id))
 
     from app import models
     from app.views import views  # Import blueprint
-    app.register_blueprint(views)
+    app.register_blueprint(views, url_prefix='/')
 
     return app

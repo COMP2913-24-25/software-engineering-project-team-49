@@ -17,23 +17,23 @@ def welcome():
 def signup():
 	form = SignUpForm()
 	if form.validate_on_submit():
-		hashed_password = generate_password_hash(form.password.data)
-		new_user = models.User(username=form.username.data, password=hashed_password, role=form.role.data)
+		new_user = models.User(first_name = form.first_name.data, last_name = form.last_name.data ,username=form.username.data, email=form.email.data)
+		new_user.set_password(form.password.data)
 		db.session.add(new_user)
 		db.session.commit()
 		flash('Account successfully created! You will now be redirected to the login page!')
-		return redirect(url_for('login'))
+		return redirect(url_for('views.login'))
 	return render_template('signup.html', form=form)
 
 @views.route('/login', methods=['GET', 'POST'])
 def login():
 	form = LogInForm()
 	if form.validate_on_submit():
-		User = models.User.query.filter_by(username=form.username.data).first()
-		if User and check_password_hash(User.password, form.password.data):
+		user = models.User.query.filter_by(username=form.username.data).first()
+		if user.check_password(form.password.data):
 			flash('Successfully Logged In!')
-			login_user(User)
-			return(redirect(url_for('home')))
+			login_user(user)
+			return(redirect(url_for('views.home')))
 		else:
 			flash("Invalid Username or Password. Please try again.")
 	return render_template('login.html', form=form)

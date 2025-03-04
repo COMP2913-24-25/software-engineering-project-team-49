@@ -2,6 +2,7 @@ from app import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from enum import Enum
+from flask_login import UserMixin
 
 # Enums
 class UserPriority(Enum):
@@ -29,7 +30,7 @@ user_watched_auctions = db.Table('user_watched_auctions',
 )
 
 # Models
-class User(db.Model):
+class User(db.Model, UserMixin):
     __tablename__ = 'users'
     
     id = db.Column(db.Integer, primary_key=True)
