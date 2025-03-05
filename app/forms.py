@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, SelectField
-from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
-from .models import User
+from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAreaField, DecimalField
+from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange
+from .models import User, Category
 
 class SignUpForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=3, max=20, message="Username should be between 3 and 20 characters.")])
@@ -10,7 +10,7 @@ class SignUpForm(FlaskForm):
     role = SelectField('role', choices=[('1', 'User'), ('2', 'Expert'), ('3', 'Manager')], validators=[DataRequired()])
     submit = SubmitField('Sign Up')
     def validate_username(self, username):
-        User = user.query.filter_by(username=username.data).first()
+        User = User.query.filter_by(username=username.data).first()
         if User:
             raise ValidationError("Username already taken.")
         
@@ -18,3 +18,15 @@ class LogInForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Log In')
+
+class AuctionItemForm(FlaskForm):
+    name = StringField('Item Name', validators=[DataRequired(), Length(min=3, max=100)])
+    description = TextAreaField('Description', validators=[DataRequired(), Length(min=10)])
+    category = SelectField('Category', choices=[], validators=[DataRequired()])
+    minimum_price = DecimalField('Minimum Price (£)', validators=[DataRequired(), NumberRange(min=0)])
+    duration = SelectField('Auction Duration', choices=[('1', '1 Day'), ('2', '2 Days'), ('3', '3 Days'), ('4', '4 Days'), ('5', '5 Days')])
+    submit = SubmitField('List Item')
+
+    def __init__(self, *args, **kwargs):
+        super(AuctionItemForm, self).__init__(*args, **kwargs)
+        self.category.choices = [(c.id, c.name) for c in Category.query.all()]
