@@ -4,14 +4,16 @@ from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, N
 from .models import User, Category
 
 class SignUpForm(FlaskForm):
+    first_name= StringField('first name')
+    last_name = StringField('last name')
     username = StringField('Username', validators=[DataRequired(), Length(min=3, max=20, message="Username should be between 3 and 20 characters.")])
+    email = StringField('email', validators=[DataRequired(), Length(min = 3, max=100, message="Email should be between 3 and 100 characters")])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6, message="Password should be minimum 6 characters.")])
     confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password', message="Passwords should match.")])
-    role = SelectField('role', choices=[('1', 'User'), ('2', 'Expert'), ('3', 'Manager')], validators=[DataRequired()])
     submit = SubmitField('Sign Up')
     def validate_username(self, username):
-        User = User.query.filter_by(username=username.data).first()
-        if User:
+        user = User.query.filter_by(username=username.data).first()
+        if user:
             raise ValidationError("Username already taken.")
         
 class LogInForm(FlaskForm):
