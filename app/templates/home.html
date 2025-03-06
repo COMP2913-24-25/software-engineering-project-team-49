@@ -1,7 +1,28 @@
 {% extends "bootstrap/base.html" %}
-{% block title %} E-Commerce Website {% endblock %}
 {% block content %}
-<body class="bg-light">
-    <h1>Hello World</h1>
-</body>
+<div class="container mt-5">
+    <h1>Welcome to the Auction Platform</h1>
+    <p>Find and bid on unique items!</p>
+
+    <h2>Featured Auctions (Ending Soon)</h2>
+    {% if featured_auctions %}
+    <div class="row">
+        {% for item in featured_auctions %}
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ item.name }}</h5>
+                    <p class="card-text">{{ item.description }}</p>
+                    <p class="card-text"><strong>Current Price:</strong> £{{ item.current_price }}</p>
+                    <p class="card-text"><strong>Ends In:</strong> {{ item.time_left() }} seconds</p>
+                    <a href="{{ url_for('views.auction_detail', item_id=item.id) }}" class="btn btn-primary">View Auction</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>No auctions ending soon. Check back later!</p>
+    {% endif %}
+</div>
 {% endblock %}
