@@ -1,13 +1,15 @@
 from flask import Blueprint
+
+views = Blueprint("views", __name__)
+
 from app import models, db
 from flask import render_template, flash, request, redirect, url_for
 from flask_login import login_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from .forms import SignUpForm, LogInForm, AuctionItemForm
-from .models import Users, Item, ItemStatus, Category
+from .models import User, Item, ItemStatus, Category
 
-views = Blueprint("views", __name__)
 
 @views.route('/')
 @views.route('/welcome')
@@ -18,20 +20,20 @@ def welcome():
 def signup():
 	form = SignUpForm()
 	if form.validate_on_submit():
-		hashed_password = generate_password_hash(form.password.data)
-		new_user = models.User(username=form.username.data, password=hashed_password, role=form.role.data)
+		new_user = User(first_name = form.first_name.data, last_name = form.last_name.data ,username=form.username.data, email=form.email.data)
+		new_user.set_password(form.password.data)
 		db.session.add(new_user)
 		db.session.commit()
 		flash('Account successfully created! You will now be redirected to the login page!')
-		return redirect(url_for('login'))
+		return redirect(url_for('views.login'))
 	return render_template('signup.html', form=form)
 
 @views.route('/login', methods=['GET', 'POST'])
 def login():
 	form = LogInForm()
 	if form.validate_on_submit():
-		User = models.User.query.filter_by(username=form.username.data).first()
-		if User and check_password_hash(User.password, form.password.data):
+		User = User.query.filter_by(username=form.username.data).first()
+		if User.check_password(form.password.data):
 			flash('Successfully Logged In!')
 			login_user(User)
 			return(redirect(url_for('home')))
