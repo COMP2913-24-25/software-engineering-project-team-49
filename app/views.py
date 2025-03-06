@@ -4,9 +4,12 @@ views = Blueprint("views", __name__)
 
 from app import models, db
 from flask import render_template, flash, request, redirect, url_for
-from flask_login import login_user, current_user
+from flask_login import login_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
-from .forms import SignUpForm, LogInForm
+from datetime import datetime, timedelta
+from .forms import SignUpForm, LogInForm, AuctionItemForm
+#from .models import User, Item, ItemStatus, Category
+
 
 @views.route('/')
 @views.route('/welcome')
@@ -29,10 +32,10 @@ def signup():
 def login():
 	form = LogInForm()
 	if form.validate_on_submit():
-		user = models.User.query.filter_by(username=form.username.data).first()
-		if user.check_password(form.password.data):
+		User = models.User.query.filter_by(username=form.username.data).first()
+		if User.check_password(form.password.data):
 			flash('Successfully Logged In!')
-			login_user(user)
+			login_user(User)
 			return(redirect(url_for('views.home')))
 		else:
 			flash("Invalid Username or Password. Please try again.")
@@ -41,3 +44,30 @@ def login():
 @views.route('/home')
 def home():
     return render_template('home.html')
+
+@views.route('/list_items', methods=['GET', 'POST'])
+@login_required
+def list_item():
+    form = AuctionItemForm()
+    
+    if form.validate_on_submit():
+        auction_end_time = datetime.utcnow() + timedelta(days=int(form.duration.data))
+        
+        new_item = models.Item(
+            name=form.name.data,
+            description=form.description.data,
+            category_id=form.category.data, 
+            minimum_price=form.minimum_price.data,
+            current_price=form.minimum_price.data,
+            seller_id=current_user.id,
+            start_time=datetime.utcnow(),
+            end_time=auction_end_time,
+            status=models.ItemStatus.PENDING.value
+        )
+
+        db.session.add(new_item)
+        db.session.commit()
+        flash("Item listed successfully!")
+        return redirect(url_for('views.home'))
+
+    return render_template('list_items.html', form=form)
