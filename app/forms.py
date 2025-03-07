@@ -32,3 +32,17 @@ class AuctionItemForm(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(AuctionItemForm, self).__init__(*args, **kwargs)
         self.category.choices = [(c.id, c.name) for c in Category.query.all()]
+
+class BidItemForm(FlaskForm):
+    bid_amount = DecimalField('Bid Amount', validators=[DataRequired()])
+    submit = SubmitField('Place Bid')
+
+    def __init__(self, item_price=None, *args, **kwargs):
+        super(BidItemForm, self).__init__(*args, **kwargs)
+        self.item_price = item_price  # Store item price for validation
+
+    def validate_bid_amount(self, field):
+        min_bid = self.item_price * 1.1 if self.item_price else 0
+        if field.data < min_bid:
+            raise ValidationError(f"Bid must be at least £{min_bid:.2f}.")
+
