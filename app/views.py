@@ -8,7 +8,7 @@ from flask_login import login_user, current_user, login_required
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from .forms import SignUpForm, LogInForm, AuctionItemForm
-#from .models import User, Item, ItemStatus, Category
+from .models import User, Item, ItemStatus, Category
 
 
 @views.route('/')
@@ -43,7 +43,19 @@ def login():
 
 @views.route('/home')
 def home():
-    return render_template('home.html')
+    """ Display homepage with auctions that have 1-2 days left """
+    now = datetime.utcnow()
+    one_day_from_now = now + timedelta(days=1)
+    two_days_from_now = now + timedelta(days=2)
+
+    featured_auctions = Item.query.filter(
+        Item.status == ItemStatus.ACTIVE.value,
+        Item.end_time >= one_day_from_now,
+        Item.end_time <= two_days_from_now
+    ).limit(5).all()  # Limit to 5 auctions for now
+
+    return render_template('home.html', featured_auctions=featured_auctions)
+
 
 @views.route('/list_items', methods=['GET', 'POST'])
 @login_required
@@ -71,3 +83,22 @@ def list_item():
         return redirect(url_for('views.home'))
 
     return render_template('list_items.html', form=form)
+
+@views.route('/auction_list')
+def auction_list():
+    """ Display only active auctions """
+    items = Item.query.filter(Item.status == ItemStatus.ACTIVE.value).all()
+    return render_template('auction_list.html', items=items)
+
+@views.route('/search', methods=['GET'])
+def search():
+    """ Search for auction items by name """
+    query = request.args.get('query', '')
+    items = Item.query.filter(Item.name.ilike(f"%{query}%")).all()
+    return render_template('search_results.html', items=items, query=query)
+
+@views.route('/auction_detail/<int:item_id>')
+def auction_detail(item_id):
+    """ Display auction details for a single item """
+    item = Item.query.get_or_404(item_id)
+    return render_template('auction_detail.html', item=item)
