@@ -5,6 +5,7 @@
     <p><strong>Description:</strong> {{ item.description }}</p>
     <p><strong>Current Price:</strong> £{{ item.current_price }}</p>
     <p><strong>Time Left:</strong> {{ item.time_left() }} seconds</p>
+    <p><strong>Minimum Bid:</strong> £{{ item.current_price * 1.1 }}</p>
 
     {% if current_user.is_authenticated %}
     <form method="POST">
