@@ -97,6 +97,7 @@ def search():
     items = Item.query.filter(Item.name.ilike(f"%{query}%")).all()
     return render_template('search_results.html', items=items, query=query)
 
+
 @views.route('/auction_detail/<int:item_id>', methods=['GET', 'POST'])
 def auction_detail(item_id):
     """ Display auction details for a single item """
@@ -115,3 +116,4 @@ def auction_detail(item_id):
             return redirect(url_for('views.auction_detail', item_id=item.id))
 
     return render_template('auction_detail.html', item=item, form=form)
+
