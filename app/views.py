@@ -64,21 +64,40 @@ def list_item():
     
     if form.validate_on_submit():
         auction_end_time = datetime.utcnow() + timedelta(days=int(form.duration.data))
-        
-        new_item = models.Item(
-            name=form.name.data,
-            description=form.description.data,
-            category_id=form.category.data, 
-            minimum_price=form.minimum_price.data,
-            current_price=form.minimum_price.data,
-            seller_id=current_user.id,
-            start_time=datetime.utcnow(),
-            end_time=auction_end_time,
-            status=models.ItemStatus.PENDING.value
-        )
-
-        db.session.add(new_item)
-        db.session.commit()
+        if form.authentication.data == '1':
+            new_item = models.Item(
+                name=form.name.data,
+                description=form.description.data,
+                category_id=form.category.data, 
+                minimum_price=form.minimum_price.data,
+                current_price=form.minimum_price.data,
+                seller_id=current_user.id,
+                start_time=datetime.utcnow(),
+                end_time=auction_end_time,
+                status=models.ItemStatus.PENDING.value
+            )
+            db.session.add(new_item)
+            db.session.commit()
+            authentication = models.AuthenticationRequest(
+                  item_id = new_item.id,
+                  requester_id = current_user.id
+            )
+            db.session.add(authentication)
+            db.session.commit()
+        else:
+            new_item = models.Item(
+                name=form.name.data,
+                description=form.description.data,
+                category_id=form.category.data, 
+                minimum_price=form.minimum_price.data,
+                current_price=form.minimum_price.data,
+                seller_id=current_user.id,
+                start_time=datetime.utcnow(),
+                end_time=auction_end_time,
+                status=models.ItemStatus.ACTIVE.value
+            )
+            db.session.add(new_item)
+            db.session.commit()
         flash("Item listed successfully!")
         return redirect(url_for('views.home'))
 
