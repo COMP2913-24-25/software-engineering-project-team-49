@@ -139,28 +139,16 @@ class Item(db.Model):
     notifications = db.relationship('Notification', lazy='dynamic', cascade="all, delete-orphan")
     
     def is_active(self):
-        """Checks if the auction is still active. Updates status if expired."""
         now = datetime.utcnow()
-        if self.status == ItemStatus.ACTIVE.value and now > self.end_time:
-            self.status = ItemStatus.EXPIRED.value  # Mark item as expired
-            db.session.commit()  # Save the update to the database
-            return False  # Auction is no longer active
-        return self.status == ItemStatus.ACTIVE.value
-
+        return (self.status == ItemStatus.ACTIVE.value and 
+                self.start_time <= now <= self.end_time)
     
     def time_left(self):
-        remaining_time = max(0, (self.end_time - datetime.utcnow()).total_seconds())
-
-        days = int(remaining_time // 86400)  # 1 day = 86400 seconds
-        hours = int((remaining_time % 86400) // 3600)  # 1 hour = 3600 seconds
-
-        if days > 0:
-            return f"{days} day{'s' if days > 1 else ''}, {hours} hour{'s' if hours > 1 else ''}"
-        elif hours > 0:
-            return f"{hours} hour{'s' if hours > 1 else ''}"
-        else:
-            return "Less than an hour"
-
+        now = datetime.utcnow()
+        if now > self.end_time:
+            return 0
+        return (self.end_time - now).total_seconds()
+    
     def __repr__(self):
         return f'<Item {self.name}>'
 

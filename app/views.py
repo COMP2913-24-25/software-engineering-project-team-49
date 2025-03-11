@@ -105,16 +105,7 @@ def list_item():
 
 @views.route('/auction_list')
 def auction_list():
-    """ Display only active auctions and update expired ones """
-    now = datetime.utcnow()
-
-    # Update expired auctions before displaying active ones
-    expired_items = Item.query.filter(Item.status == ItemStatus.ACTIVE.value, Item.end_time < now).all()
-    for item in expired_items:
-        item.status = ItemStatus.EXPIRED.value  # Mark as expired
-    db.session.commit()  # Save all changes
-    
-    # Fetch active auctions
+    """ Display only active auctions (Celery handles expiration) """
     items = Item.query.filter(Item.status == ItemStatus.ACTIVE.value).all()
     return render_template('auction_list.html', items=items)
 
@@ -134,22 +125,4 @@ def search():
     
     return render_template('search_results.html', items=items, query=query)
 
-@views.route('/auction_detail/<int:item_id>', methods=['GET', 'POST'])
-def auction_detail(item_id):
-    """ Display auction details for a single item """
-    item = Item.query.get_or_404(item_id)
-    form = BidItemForm(item_price=item.current_price)
-
-    if form.validate_on_submit():
-        # Process the bid (ensure it is valid)
-        new_bid = form.bid_amount.data
-        if new_bid < item.current_price * 1.1:
-            flash("Your bid must be at least 10% higher than the current price.", "danger")
-        else:
-            item.current_price = new_bid
-            db.session.commit()
-            flash("Bid placed successfully!", "success")
-            return redirect(url_for('views.auction_detail', item_id=item.id))
-
-    return render_template('auction_detail.html', item=item, form=form)
 
