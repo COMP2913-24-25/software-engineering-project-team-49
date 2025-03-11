@@ -139,9 +139,14 @@ class Item(db.Model):
     notifications = db.relationship('Notification', lazy='dynamic', cascade="all, delete-orphan")
     
     def is_active(self):
+        """Checks if the auction is still active. Updates status if expired."""
         now = datetime.utcnow()
-        return (self.status == ItemStatus.ACTIVE.value and 
-                self.start_time <= now <= self.end_time)
+        if self.status == ItemStatus.ACTIVE.value and now > self.end_time:
+            self.status = ItemStatus.EXPIRED.value  # Mark item as expired
+            db.session.commit()  # Save the update to the database
+            return False  # Auction is no longer active
+        return self.status == ItemStatus.ACTIVE.value
+
     
     def time_left(self):
         remaining_time = max(0, (self.end_time - datetime.utcnow()).total_seconds())

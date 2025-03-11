@@ -105,7 +105,16 @@ def list_item():
 
 @views.route('/auction_list')
 def auction_list():
-    """ Display only active auctions """
+    """ Display only active auctions and update expired ones """
+    now = datetime.utcnow()
+
+    # Update expired auctions before displaying active ones
+    expired_items = Item.query.filter(Item.status == ItemStatus.ACTIVE.value, Item.end_time < now).all()
+    for item in expired_items:
+        item.status = ItemStatus.EXPIRED.value  # Mark as expired
+    db.session.commit()  # Save all changes
+    
+    # Fetch active auctions
     items = Item.query.filter(Item.status == ItemStatus.ACTIVE.value).all()
     return render_template('auction_list.html', items=items)
 

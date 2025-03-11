@@ -4,20 +4,23 @@
     <h2>{{ item.name }}</h2>
     <p><strong>Description:</strong> {{ item.description }}</p>
     <p><strong>Current Price:</strong> £{{ item.current_price }}</p>
-    <p><strong>Time Left:</strong> {{ item.time_left() }} seconds</p>
-    <p><strong>Minimum Bid:</strong> £{{ item.current_price * 1.1 }}</p>
+    <p><strong>Time Left:</strong> {{ item.time_left() }}</p>
 
-    {% if current_user.is_authenticated %}
-    <form method="POST">
-        {{ form.hidden_tag() }}
-        <div class="form-group">
-            {{ form.bid_amount.label }}
-            {{ form.bid_amount(class="form-control") }}
-        </div>
-        <button type="submit" class="btn btn-success">Place Bid</button>
-    </form>
+    {% if item.is_active() %}
+        {% if current_user.is_authenticated %}
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                {{ form.bid_amount.label }}
+                {{ form.bid_amount(class="form-control") }}
+            </div>
+            <button type="submit" class="btn btn-success">Place Bid</button>
+        </form>
+        {% else %}
+        <p><a href="{{ url_for('views.login') }}">Log in</a> to place a bid.</p>
+        {% endif %}
     {% else %}
-    <p><a href="{{ url_for('views.login') }}">Log in</a> to place a bid.</p>
+        <p class="text-danger"><strong>This auction has ended.</strong></p>
     {% endif %}
 </div>
 {% endblock %}
