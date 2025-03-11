@@ -143,9 +143,12 @@ class Item(db.Model):
         return (self.status == ItemStatus.ACTIVE.value and 
                 self.start_time <= now <= self.end_time)
     
-    def time_left(self):
+    def time_left(self, return_numeric=False):
         now = datetime.utcnow()
         remaining_time = max(0, (self.end_time - now).total_seconds())
+
+        if return_numeric:  
+            return int(remaining_time)  # Return as an integer (for tests)
 
         days = int(remaining_time // 86400)  # 1 day = 86400 seconds
         hours = int((remaining_time % 86400) // 3600)  # 1 hour = 3600 seconds
@@ -156,8 +159,9 @@ class Item(db.Model):
             return f"{hours} hour{'s' if hours > 1 else ''}"
         else:
             return "Less than an hour"
-        def __repr__(self):
-            return f'<Item {self.name}>'
+    
+    def __repr__(self):
+        return f'<Item {self.name}>'
 
 
 class ItemImage(db.Model):
