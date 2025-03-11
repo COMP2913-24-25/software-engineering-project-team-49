@@ -112,10 +112,18 @@ def auction_list():
 @views.route('/search', methods=['GET'])
 def search():
     """ Search for auction items by name """
-    query = request.args.get('query', '')
-    items = Item.query.filter(Item.name.ilike(f"%{query}%")).all()
-    return render_template('search_results.html', items=items, query=query)
+    query = request.args.get('query', '').strip()  # Remove leading/trailing spaces
+    
+    if not query:
+        flash("Please enter a search term.", "warning")
+        return redirect(url_for('views.auction_list'))  # Redirect if search is empty
 
+    items = Item.query.filter(
+        Item.name.ilike(f"%{query}%"), 
+        Item.status == ItemStatus.ACTIVE.value  # Only search in active auctions
+    ).all()
+    
+    return render_template('search_results.html', items=items, query=query)
 
 @views.route('/auction_detail/<int:item_id>', methods=['GET', 'POST'])
 def auction_detail(item_id):

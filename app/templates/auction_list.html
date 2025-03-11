@@ -2,20 +2,31 @@
 {% block content %}
 <div class="container mt-5">
     <h2>Active Auctions</h2>
+
+    <!-- Search Bar -->
+    <form action="{{ url_for('views.search') }}" method="GET" class="form-inline my-3">
+        <input class="form-control mr-sm-2" type="search" placeholder="Search auctions..." name="query" required>
+        <button class="btn btn-outline-success my-sm-0" type="submit">Search</button>
+    </form>
+
+    {% if items %}
     <div class="row">
         {% for item in items %}
         <div class="col-md-4">
-            <div class="card">
+            <div class="card mb-4 shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">{{ item.name }}</h5>
-                    <p class="card-text">{{ item.description }}</p>
+                    <p class="card-text">{{ item.description[:100] }}...</p>
                     <p class="card-text"><strong>Current Price:</strong> £{{ item.current_price }}</p>
-                    <p class="card-text"><strong>Time Left:</strong> {{ item.time_left() }} seconds</p>
+                    <p class="card-text"><strong>Time Left:</strong> {{ item.time_left() }}</p>
                     <a href="{{ url_for('views.auction_detail', item_id=item.id) }}" class="btn btn-primary">View Auction</a>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
+    {% else %}
+    <p>No active auctions available.</p>
+    {% endif %}
 </div>
 {% endblock %}

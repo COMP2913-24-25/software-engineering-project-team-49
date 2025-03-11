@@ -47,3 +47,6 @@ class BidItemForm(FlaskForm):
         if field.data < min_bid:
             raise ValidationError(f"Bid must be at least £{min_bid:.2f}.")
 
+class SearchForm(FlaskForm):
+    query = StringField('Search Auctions', validators=[DataRequired()])
+    submit = SubmitField('Search')
