@@ -105,7 +105,7 @@ def list_item():
 
 @views.route('/auction_list')
 def auction_list():
-    """ Display only active auctions (Celery handles expiration) """
+    """ Display only active auctions"""
     items = Item.query.filter(Item.status == ItemStatus.ACTIVE.value).all()
     return render_template('auction_list.html', items=items)
 
