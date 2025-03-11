@@ -165,3 +165,5 @@ def notifications():
      notifications = Notification.query.filter(Notification.user_id==current_user.id)
      return render_template('notifications.html', notifications=notifications)
 
+
+
