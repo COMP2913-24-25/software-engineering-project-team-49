@@ -142,26 +142,17 @@ class Item(db.Model):
         now = datetime.utcnow()
         return (self.status == ItemStatus.ACTIVE.value and 
                 self.start_time <= now <= self.end_time)
-    
+
     def time_left(self):
-        """ Returns time left as an integer (for tests) or a formatted string (for templates). """
-        now = datetime.utcnow()
+        """ Returns time left as HH:MM:SS format or '00:00:00' if expired. """
+        now = datetime.utcnow()  # Define "now" inside the function
         remaining_time = max(0, (self.end_time - now).total_seconds())
 
-        # If called from a test (expecting numeric values)
-        if isinstance(remaining_time, (int, float)):
-            return int(remaining_time)  # Return as an integer for tests
+        hours = int(remaining_time // 3600)
+        minutes = int((remaining_time % 3600) // 60)
+        seconds = int(remaining_time % 60)
 
-        # If used in a template, return a formatted string
-        days = int(remaining_time // 86400)  # 1 day = 86400 seconds
-        hours = int((remaining_time % 86400) // 3600)  # 1 hour = 3600 seconds
-
-        if days > 0:
-            return f"{days} day{'s' if days > 1 else ''}, {hours} hour{'s' if hours > 1 else ''}"
-        elif hours > 0:
-            return f"{hours} hour{'s' if hours > 1 else ''}"
-        else:
-            return "Less than an hour"
+        return f"{hours:02}:{minutes:02}:{seconds:02}"
 
     def __repr__(self):
         return f'<Item {self.name}>'
