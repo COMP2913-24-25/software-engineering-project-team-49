@@ -1,0 +1,17 @@
+{% extends "bootstrap/base.html" %}
+{% block content %}
+<div class="container mt-5">
+    {% if notifications %}
+    {%for notification in notifications%}
+    <div class="row">
+        <div class="card">
+            <div clas="card-body">
+                <h5 class="card-title">{{notification.type}}</h5>
+                <p class="card-text">{{notification.message}}</p>
+            </div>
+        </div>
+    </div>
+    {%endfor%}
+    {%endif%}
+</div>
+{% endblock %}

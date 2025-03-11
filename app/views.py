@@ -4,11 +4,11 @@ views = Blueprint("views", __name__)
 
 from app import models, db
 from flask import render_template, flash, request, redirect, url_for
-from flask_login import login_user, current_user, login_required
+from flask_login import login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm
-from .models import User, Item, ItemStatus, Category
+from .models import User, Item, ItemStatus, Category, Bid, Notification
 
 
 @views.route('/')
@@ -40,6 +40,12 @@ def login():
 		else:
 			flash("Invalid Username or Password. Please try again.")
 	return render_template('login.html', form=form)
+
+@views.route('/logout', methods=['GET','POST'])
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('views.welcome'))
 
 @views.route('/home')
 def home():
@@ -125,14 +131,37 @@ def auction_detail(item_id):
 
     if form.validate_on_submit():
         # Process the bid (ensure it is valid)
-        new_bid = form.bid_amount.data
-        if new_bid < item.current_price * 1.1:
+        new_bid_amount = form.bid_amount.data
+        if new_bid_amount < item.current_price * 1.1:
             flash("Your bid must be at least 10% higher than the current price.", "danger")
         else:
-            item.current_price = new_bid
+            previous_bid = Bid.query.filter(Bid.item_id == item_id).order_by(Bid.amount.desc()).first()
+            
+            #update item price and new bid
+            item.current_price = new_bid_amount
+            new_bid = Bid(item_id=item_id, user_id = current_user.id, amount = new_bid_amount)
+            db.session.add(new_bid)
             db.session.commit()
+
+            #make notification for previous bidder
+            if previous_bid and previous_bid.user_id != current_user.id:
+                notification = Notification(
+                    user_id=previous_bid.user_id,
+                    item_id=item.id,
+                    type="outbid",
+                    message=f"You have been outbid on '{item.name}'. The new bid is £{new_bid_amount:.2f}.",
+                )
+                db.session.add(notification)
+                db.session.commit()
+
             flash("Bid placed successfully!", "success")
             return redirect(url_for('views.auction_detail', item_id=item.id))
 
     return render_template('auction_detail.html', item=item, form=form)
+
+@views.route('/notifications', methods=['GET'])
+@login_required
+def notifications():
+     notifications = Notification.query.filter(Notification.user_id==current_user.id)
+     return render_template('notifications.html', notifications=notifications)
 
