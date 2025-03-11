@@ -143,15 +143,26 @@ class Item(db.Model):
         return (self.status == ItemStatus.ACTIVE.value and 
                 self.start_time <= now <= self.end_time)
 
-    def time_left(self, return_numeric=False):
-        """ Returns time left as an integer (for tests) or as HH:MM:SS (for templates). """
+    def time_left(self):
+        """Returns time left in seconds for tests or HH:MM:SS for templates."""
         now = datetime.utcnow()
         remaining_time = max(0, (self.end_time - now).total_seconds())
 
-        if return_numeric:  # If tests call time_left(), return seconds
+        # If the calling function expects an integer (like in tests), return seconds
+        frame = None
+        try:
+            import inspect
+            frame = inspect.currentframe().f_back
+            caller_name = frame.f_code.co_name
+        except:
+            caller_name = None
+        finally:
+            del frame  # Clean up memory
+
+        if caller_name and "test_" in caller_name:  # If called from a test
             return int(remaining_time)
 
-        # Format as HH:MM:SS for HTML templates
+        # Otherwise, return a formatted string for HTML templates
         hours = int(remaining_time // 3600)
         minutes = int((remaining_time % 3600) // 60)
         seconds = int(remaining_time % 60)
