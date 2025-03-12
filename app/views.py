@@ -30,16 +30,25 @@ def signup():
 
 @views.route('/login', methods=['GET', 'POST'])
 def login():
-	form = LogInForm()
-	if form.validate_on_submit():
-		User = models.User.query.filter_by(username=form.username.data).first()
-		if User.check_password(form.password.data):
-			flash('Successfully Logged In!')
-			login_user(User)
-			return(redirect(url_for('views.home')))
-		else:
-			flash("Invalid Username or Password. Please try again.")
-	return render_template('login.html', form=form)
+    form = LogInForm()
+    if form.validate_on_submit():
+        User = models.User.query.filter_by(username=form.username.data).first()
+        if User and User.check_password(form.password.data):
+            if User.priority.value == models.UserPriority.GENERAL_USER:
+                flash('Successfully Logged In!')
+                login_user(User)
+                return redirect(url_for('views.home'))
+            elif User.priority.value == models.UserPriority.EXPERT:
+                flash('Successfully Logged In!')
+                login_user(User)
+                return redirect(url_for('views.expert'))
+            else:
+                flash('Successfully Logged In!')
+                login_user(User)
+                return redirect(url_for('views.manager'))
+        else:
+            flash("Invalid Username or Password. Please try again.")
+    return render_template('login.html', form=form)
 
 @views.route('/logout', methods=['GET','POST'])
 @login_required
@@ -67,7 +76,7 @@ def home():
 @login_required
 def list_item():
     form = AuctionItemForm()
-    
+
     if form.validate_on_submit():
         auction_end_time = datetime.utcnow() + timedelta(days=int(form.duration.data))
         if form.authentication.data == '1':
@@ -165,5 +174,12 @@ def notifications():
      notifications = Notification.query.filter(Notification.user_id==current_user.id)
      return render_template('notifications.html', notifications=notifications)
 
+@views.route('/expert')
+@login_required
+def expert():
+	return render_template('expert.html')
 
-
+@views.route('/manager')
+@login_required
+def manager():
+	return render_template('manager.html')
