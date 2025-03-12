@@ -7,7 +7,7 @@ from flask import render_template, flash, request, redirect, url_for
 from flask_login import login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
-from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm
+from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm
 from .models import User, Item, ItemStatus, Category, Bid, Notification
 
 
@@ -34,18 +34,18 @@ def login():
     if form.validate_on_submit():
         User = models.User.query.filter_by(username=form.username.data).first()
         if User and User.check_password(form.password.data):
-            if User.priority.value == models.UserPriority.GENERAL_USER:
-                flash('Successfully Logged In!')
-                login_user(User)
-                return redirect(url_for('views.home'))
-            elif User.priority.value == models.UserPriority.EXPERT:
+            if User.is_expert():
                 flash('Successfully Logged In!')
                 login_user(User)
                 return redirect(url_for('views.expert'))
-            else:
+            elif User.is_manager():
                 flash('Successfully Logged In!')
                 login_user(User)
                 return redirect(url_for('views.manager'))
+            else:
+                flash('Successfully Logged In!')
+                login_user(User)
+                return redirect(url_for('views.home'))
         else:
             flash("Invalid Username or Password. Please try again.")
     return render_template('login.html', form=form)
@@ -174,10 +174,44 @@ def notifications():
      notifications = Notification.query.filter(Notification.user_id==current_user.id)
      return render_template('notifications.html', notifications=notifications)
 
-@views.route('/expert')
+@views.route('/expert', methods=['GET', 'POST'])
 @login_required
 def expert():
-	return render_template('expert.html')
+    DAYS_OF_WEEK = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    form = AvailabilityForm()
+    if form.validate_on_submit():
+        models.ExpertAvailability.query.filter_by(user_id=current_user.id).delete()
+        if form.disable_week.data:
+            for day in DAYS_OF_WEEK:
+                new_availability = models.ExpertAvailability(user_id=current_user.id,
+                                                             day_of_week=day,
+                                                             start_time=datetime.strptime("08:00", "%H%M").time(),
+                                                             end_time=datetime.strptime("20:00", "%H%M").time(),
+                                                             status=models.AvailabilityStatus.UNAVAILABLE
+                                                            )
+                db.session.add(new_availability)
+        else:
+            availability_data = {
+                "Sunday": (form.sunday_start.data, form.sunday_end.data),
+                "Monday": (form.monday_start.data, form.monday_end.data),
+                "Tuesday": (form.tuesday_start.data, form.tuesday_end.data),
+                "Wednesday": (form.wednesday_start.data, form.wednesday_end.data),
+                "Thursday": (form.thursday_start.data, form.thursday_end.data),
+                "Friday": (form.friday_start.data, form.friday_end.data),
+                "Saturday": (form.saturday_start.data, form.saturday_end.data),
+            }
+            for day, (start, end) in availability_data:
+                new_availability = models.ExpertAvailability(user_id=current_user.id,
+                                                             day_of_week=day,
+                                                             start_time=start,
+                                                             end_time=end,
+                                                             status=models.AvailabilityStatus.AVAILABLE
+                                                            )
+                db.session.add(new_availability)
+            db.session.commit()
+        flash("Availability Added!", "success")
+        return redirect(url_for('views.expert'))
+    return render_template('expert.html', form=form)
 
 @views.route('/manager')
 @login_required

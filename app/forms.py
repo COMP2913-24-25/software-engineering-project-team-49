@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAreaField, DecimalField
+from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAreaField, DecimalField, TimeField, BooleanField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange
 from .models import User, Category
 
@@ -47,3 +47,20 @@ class BidItemForm(FlaskForm):
         if field.data < min_bid:
             raise ValidationError(f"Bid must be at least £{min_bid:.2f}.")
 
+class AvailabilityForm(FlaskForm):
+    sunday_start = TimeField("Sunday Start", format='%H%M', validators=[DataRequired()])
+    sunday_end = TimeField("Sunday End", format='%H%M', validators=[DataRequired()])
+    monday_start = TimeField("Monday Start", format='%H%M', validators=[DataRequired()])
+    monday_end = TimeField("Monday End", format='%H%M', validators=[DataRequired()])
+    tuesday_start = TimeField("Tuesday Start", format='%H%M', validators=[DataRequired()])
+    tuesday_end = TimeField("Tuesday End", format='%H%M', validators=[DataRequired()])
+    wednesday_start = TimeField("Wednesday Start", format='%H%M', validators=[DataRequired()])
+    wednesday_end = TimeField("Wednesday End", format='%H%M', validators=[DataRequired()])
+    thursday_start = TimeField("Thursday Start", format='%H%M', validators=[DataRequired()])
+    thursday_end = TimeField("Thursday End", format='%H%M', validators=[DataRequired()])
+    friday_start = TimeField("Sunday Start", format='%H%M', validators=[DataRequired()])
+    friday_end = TimeField("Sunday Start", format='%H%M', validators=[DataRequired()])
+    saturday_start = TimeField("Sunday Start", format='%H%M', validators=[DataRequired()])
+    saturday_end = TimeField("Sunday Start", format='%H%M', validators=[DataRequired()])
+    disable_week = BooleanField("Take the week off (Holiday/Illness)")
+    submit = SubmitField("Set availability")
