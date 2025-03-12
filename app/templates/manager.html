@@ -2,5 +2,36 @@
 {% block content %}
 <div class="container mt-5">
     <h1>Welcome to the Manager Page</h1>
+    <h2>Pending Items</h2>
+    {% if items %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Item Name</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Minimum Price</th>
+                    <th>Seller</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.description }}</td>
+                    <td>{{ item.category_id }}</td>
+                    <td>${{ item.minimum_price }}</td>
+                    <td>{{ item.seller_id }}</td>
+                    <td>{{ item.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ item.end_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+    <p>No pending items available.</p>
+    {% endif %}
 </div>
 {% endblock %}

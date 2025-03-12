@@ -8,7 +8,7 @@ from flask_login import login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm
-from .models import User, Item, ItemStatus, Category, Bid, Notification
+from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability
 
 
 @views.route('/')
@@ -20,7 +20,7 @@ def welcome():
 def signup():
 	form = SignUpForm()
 	if form.validate_on_submit():
-		new_user = models.User(first_name = form.first_name.data, last_name = form.last_name.data ,username=form.username.data, email=form.email.data)
+		new_user = User(first_name = form.first_name.data, last_name = form.last_name.data ,username=form.username.data, email=form.email.data)
 		new_user.set_password(form.password.data)
 		db.session.add(new_user)
 		db.session.commit()
@@ -93,7 +93,7 @@ def list_item():
             )
             db.session.add(new_item)
             db.session.commit()
-            authentication = models.AuthenticationRequest(
+            authentication = AuthenticationRequest(
                   item_id = new_item.id,
                   requester_id = current_user.id
             )
@@ -180,7 +180,7 @@ def expert():
     DAYS_OF_WEEK = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
     form = AvailabilityForm()
     if form.validate_on_submit():
-        models.ExpertAvailability.query.filter_by(user_id=current_user.id).delete()
+        ExpertAvailability.query.filter_by(user_id=current_user.id).delete()
         if form.disable_week.data:
             for day in DAYS_OF_WEEK:
                 new_availability = models.ExpertAvailability(user_id=current_user.id,
@@ -213,7 +213,8 @@ def expert():
         return redirect(url_for('views.expert'))
     return render_template('expert.html', form=form)
 
-@views.route('/manager')
+@views.route('/manager', methods=['GET', 'POST'])
 @login_required
 def manager():
-	return render_template('manager.html')
+    pending_items = Item.query.filter_by(status=ItemStatus.PENDING.value).all()
+    return render_template('manager.html', items=pending_items)
