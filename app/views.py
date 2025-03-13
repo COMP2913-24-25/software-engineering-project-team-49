@@ -125,4 +125,41 @@ def search():
     
     return render_template('search_results.html', items=items, query=query)
 
+@views.route('/auction_detail/<int:item_id>', methods=['GET', 'POST'])
+def auction_detail(item_id):
+    """ Display auction details for a single item """
+    item = Item.query.get_or_404(item_id)
+    form = BidItemForm(item_price=item.current_price)
+
+    if form.validate_on_submit():
+        # Process the bid (ensure it is valid)
+        new_bid_amount = form.bid_amount.data
+        if new_bid_amount < item.current_price * 1.1:
+            flash("Your bid must be at least 10% higher than the current price.", "danger")
+        else:
+            previous_bid = Bid.query.filter(Bid.item_id == item_id).order_by(Bid.amount.desc()).first()
+            
+            #update item price and new bid
+            item.current_price = new_bid_amount
+            new_bid = Bid(item_id=item_id, user_id = current_user.id, amount = new_bid_amount)
+            db.session.add(new_bid)
+            db.session.commit()
+
+            #make notification for previous bidder
+            if previous_bid and previous_bid.user_id != current_user.id:
+                notification = Notification(
+                    user_id=previous_bid.user_id,
+                    item_id=item.id,
+                    type="outbid",
+                    message=f"You have been outbid on '{item.name}'. The new bid is £{new_bid_amount:.2f}.",
+                )
+                db.session.add(notification)
+                db.session.commit()
+
+            flash("Bid placed successfully!", "success")
+            return redirect(url_for('views.auction_detail', item_id=item.id))
+
+    return render_template('auction_detail.html', item=item, form=form)
+
+
 
