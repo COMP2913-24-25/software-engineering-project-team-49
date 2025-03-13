@@ -219,6 +219,7 @@ def test_user_relationships_comprehensive(init_database):
     now = datetime.utcnow()
     availability = ExpertAvailability(
         user_id=expert.id,
+        day_of_week = "Monday",
         start_time=now + timedelta(days=1),
         end_time=now + timedelta(days=1, hours=4)
     )
@@ -690,11 +691,13 @@ def test_expert_availability(init_database):
     now = datetime.utcnow()
     slot1 = ExpertAvailability(
         user_id=expert.id,
+        day_of_week="monday",
         start_time=now + timedelta(days=1, hours=9),
         end_time=now + timedelta(days=1, hours=12)
     )
     slot2 = ExpertAvailability(
         user_id=expert.id,
+        day_of_week="monday",
         start_time=now + timedelta(days=2, hours=14),
         end_time=now + timedelta(days=2, hours=18)
     )
@@ -1171,6 +1174,7 @@ def test_cascade_delete_user(init_database):
     
     availability = ExpertAvailability(
         user_id=user.id,
+        day_of_week="Monday",
         start_time=datetime.utcnow(),
         end_time=datetime.utcnow() + timedelta(hours=2)
     )
