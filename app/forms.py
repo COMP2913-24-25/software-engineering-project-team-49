@@ -64,3 +64,7 @@ class AvailabilityForm(FlaskForm):
     saturday_end = TimeField("Sunday Start", format='%H%M', validators=[DataRequired()])
     disable_week = BooleanField("Take the week off (Holiday/Illness)")
     submit = SubmitField("Set availability")
+
+class SearchForm(FlaskForm):
+    query = StringField('Search Auctions', validators=[DataRequired()])
+    submit = SubmitField('Search')
