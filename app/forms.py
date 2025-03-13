@@ -1,5 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAreaField, DecimalField, TimeField, BooleanField
+from wtforms_sqlalchemy.fields import QuerySelectMultipleField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange
 from .models import User, Category
 
@@ -64,3 +65,7 @@ class AvailabilityForm(FlaskForm):
     saturday_end = TimeField("Sunday Start", format='%H%M', validators=[DataRequired()])
     disable_week = BooleanField("Take the week off (Holiday/Illness)")
     submit = SubmitField("Set availability")
+
+class CategoryForm(FlaskForm):
+    categories = QuerySelectMultipleField('Select Categories', query_factory=lambda: Category.query.all(), get_label='name')
+    submit = SubmitField('Save')

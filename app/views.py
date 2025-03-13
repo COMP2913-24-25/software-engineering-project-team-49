@@ -7,8 +7,8 @@ from flask import render_template, flash, request, redirect, url_for
 from flask_login import login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
-from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm
-from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, UserPriority
+from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm
+from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority
 
 
 @views.route('/')
@@ -34,14 +34,14 @@ def login():
     if form.validate_on_submit():
         User = models.User.query.filter_by(username=form.username.data).first()
         if User and User.check_password(form.password.data):
-            if User.is_expert():
-                flash('Successfully Logged In!')
-                login_user(User)
-                return redirect(url_for('views.expert'))
-            elif User.is_manager():
+            if User.is_manager():
                 flash('Successfully Logged In!')
                 login_user(User)
                 return redirect(url_for('views.manager'))
+            elif User.is_expert():
+                flash('Successfully Logged In!')
+                login_user(User)
+                return redirect(url_for('views.expert'))
             else:
                 flash('Successfully Logged In!')
                 login_user(User)
@@ -177,6 +177,11 @@ def notifications():
 @views.route('/expert', methods=['GET', 'POST'])
 @login_required
 def expert():
+    return render_template('expert.html')
+
+@views.route('/select_availability', methods=['GET', 'POST'])
+@login_required
+def select_availability():
     DAYS_OF_WEEK = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
     form = AvailabilityForm()
     if form.validate_on_submit():
@@ -211,7 +216,21 @@ def expert():
             db.session.commit()
         flash("Availability Added!", "success")
         return redirect(url_for('views.expert'))
-    return render_template('expert.html', form=form)
+    return render_template('select_availability.html', form=form)
+
+@views.route('/select_category', methods=['GET', 'POST'])
+@login_required
+def select_category():
+    form = CategoryForm()
+    if form.validate_on_submit():
+        ExpertCategory.query.filter_by(user_id=current_user.id).delete()
+        for category in form.categories.data:
+            expertise = ExpertCategory(user_id=current_user.id, category=category.name)
+            db.session.add(expertise)
+        db.session.commit()
+        flash('Expertise preferences updated!')
+        return redirect(url_for('views.expert'))
+    return render_template('select_category.html', form=form)
 
 @views.route('/manager', methods=['GET', 'POST'])
 @login_required
