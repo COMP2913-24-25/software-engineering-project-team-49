@@ -22,6 +22,10 @@ class AuthenticationStatus(Enum):
     REJECTED = 3
     SECOND_OPINION = 4
 
+class AvailabilityStatus(Enum):
+    AVAILABLE = "available"
+    UNAVAILABLE = "unavailable"
+
 # Association tables
 user_watched_auctions = db.Table('user_watched_auctions',
     db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
@@ -93,9 +97,11 @@ class ExpertAvailability(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    day_of_week = db.Column(db.String(10), nullable=False)
     start_time = db.Column(db.DateTime, nullable=False)
     end_time = db.Column(db.DateTime, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.Enum(AvailabilityStatus), default=AvailabilityStatus.AVAILABLE)
     
     def __repr__(self):
         return f'<ExpertAvailability {self.start_time} to {self.end_time}>'
