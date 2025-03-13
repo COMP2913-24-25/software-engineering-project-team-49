@@ -8,7 +8,7 @@ from flask_login import login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm
-from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability
+from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, UserPriority
 
 
 @views.route('/')
@@ -217,4 +217,5 @@ def expert():
 @login_required
 def manager():
     pending_items = Item.query.filter_by(status=ItemStatus.PENDING.value).all()
-    return render_template('manager.html', items=pending_items)
+    experts = User.query.filter_by(priority=UserPriority.EXPERT.value).all()
+    return render_template('manager.html', items=pending_items, experts=experts)

@@ -33,5 +33,32 @@
     {% else %}
     <p>No pending items available.</p>
     {% endif %}
+    <div class="container mt-5">
+        <h2>Experts</h2>
+        {% if experts %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Expert ID</th>
+                        <th>Expert Username</th>
+                        <th>Expert Name</th>
+                        <th>Email</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expert in experts %}
+                        <tr>
+                            <td>{{ expert.id }}</td>
+                            <td>{{ expert.username }}</td>
+                            <td>{{ expert.first_name }} {{ expert.last_name }}</td>
+                            <td>{{ expert.email }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No experts found</p>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}
