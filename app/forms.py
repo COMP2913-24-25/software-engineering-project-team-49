@@ -66,6 +66,11 @@ class AvailabilityForm(FlaskForm):
     disable_week = BooleanField("Take the week off (Holiday/Illness)")
     submit = SubmitField("Set availability")
 
+class SearchForm(FlaskForm):
+    query = StringField('Search Auctions', validators=[DataRequired()])
+    submit = SubmitField('Search')
+
+
 class CategoryForm(FlaskForm):
     categories = QuerySelectMultipleField('Select Categories', query_factory=lambda: Category.query.all(), get_label='name')
     submit = SubmitField('Save')
