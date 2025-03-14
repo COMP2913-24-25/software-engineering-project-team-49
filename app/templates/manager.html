@@ -26,6 +26,9 @@
                     <td>{{ item.seller_id }}</td>
                     <td>{{ item.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
                     <td>{{ item.end_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        <a href="{{ url_for('views.assign_expert', item_id=item.id) }}" class="btn btn-info">Assign Expert</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

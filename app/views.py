@@ -7,8 +7,8 @@ from flask import render_template, flash, request, redirect, url_for
 from flask_login import login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
-from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm
-from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority
+from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm
+from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage
 
 
 @views.route('/')
@@ -192,7 +192,7 @@ def expert():
 def select_availability():
     DAYS_OF_WEEK = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
     form = AvailabilityForm()
-    if form.validate_on_submit():
+    if form.validate_on_submit() or form.disable_week.data:
         ExpertAvailability.query.filter_by(user_id=current_user.id).delete()
         if form.disable_week.data:
             for day in DAYS_OF_WEEK:
@@ -246,3 +246,25 @@ def manager():
     pending_items = Item.query.filter_by(status=ItemStatus.PENDING.value).all()
     experts = User.query.filter_by(priority=UserPriority.EXPERT.value).all()
     return render_template('manager.html', items=pending_items, experts=experts)
+
+@views.route('/assign_expert/<int:item_id>', methods=['GET', 'POST'])
+@login_required
+def assign_expert(item_id):
+    item = Item.query.get_or_404(item_id)
+    experts = User.query.join(ExpertCategory).filter(ExpertCategory.category == item.category_rel.name, User.priority == UserPriority.EXPERT.value).all()
+    print(f"Eligible experts for category {item.category_id}: {experts}")
+    form = AssignExpertForm()
+    form.expert.choices = [(expert.id, expert.username) for expert in experts]
+    if form.validate_on_submit():
+        authentication = AuthenticationRequest.query.filter_by(item_id=item.id).first()
+        authentication.expert_id = form.expert.data
+        authentication_message = AuthenticationMessage(request_id=authentication.id,
+                                                       sender_id=current_user.id,
+                                                       message="Please review this item: {item.name}",
+                                                       created_at=datetime.utcnow()
+                                                       )
+        db.session.add(authentication_message)
+        db.session.commit()
+        flash(f"Expert assigned successfully!", "success")
+        return redirect(url_for('views.manager'))
+    return render_template('assign_expert.html', form=form, item=item)

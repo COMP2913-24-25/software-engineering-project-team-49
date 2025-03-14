@@ -7,7 +7,7 @@
         {{ form.hidden_tag() }}
         <div class="form-check mb-3">
             {{ form.disable_week(class="form-check-input") }}
-            <label class="form-check-label"></label>
+            <label class="form-check-label">Unavailable for Whole Week</label>
         </div>
         <h4>Set Availability for each day</h4>
         {% for day in ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] %}
