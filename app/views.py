@@ -24,7 +24,7 @@ def signup():
 		new_user.set_password(form.password.data)
 		db.session.add(new_user)
 		db.session.commit()
-		flash('Account successfully created! You will now be redirected to the login page!')
+		flash('Account successfully created! You will now be redirected to the login page!', 'success')
 		return redirect(url_for('views.login'))
 	return render_template('signup.html', form=form)
 
@@ -35,19 +35,19 @@ def login():
         User = models.User.query.filter_by(username=form.username.data).first()
         if User and User.check_password(form.password.data):
             if User.is_expert():
-                flash('Successfully Logged In!')
+                flash('Successfully Logged In!', 'success')
                 login_user(User)
                 return redirect(url_for('views.expert'))
             elif User.is_manager():
-                flash('Successfully Logged In!')
+                flash('Successfully Logged In!', 'success')
                 login_user(User)
                 return redirect(url_for('views.manager'))
             else:
-                flash('Successfully Logged In!')
+                flash('Successfully Logged In!', 'success')
                 login_user(User)
                 return redirect(url_for('views.home'))
         else:
-            flash("Invalid Username or Password. Please try again.")
+            flash("Invalid Username or Password. Please try again.", 'danger')
     return render_template('login.html', form=form)
 
 @views.route('/logout', methods=['GET','POST'])
@@ -113,7 +113,7 @@ def list_item():
             )
             db.session.add(new_item)
             db.session.commit()
-        flash("Item listed successfully!")
+        flash('Item listed successfully!', 'success')
         return redirect(url_for('views.home'))
 
     return render_template('list_items.html', form=form)
@@ -171,7 +171,7 @@ def auction_detail(item_id):
                 db.session.add(notification)
                 db.session.commit()
 
-            flash("Bid placed successfully!", "success")
+            flash('Bid placed successfully!', 'success')
             return redirect(url_for('views.auction_detail', item_id=item.id))
 
     return render_template('auction_detail.html', item=item, form=form)
