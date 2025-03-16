@@ -2,10 +2,13 @@ import pytest
 from app import create_app, db
 from app.models import User, Item, Bid
 from datetime import datetime
+from flask_wtf.csrf import CSRFProtect
+from flask import url_for
 
 @pytest.fixture
 def app():
     app = create_app()
+    app.config["WTF_CSRF_ENABLED"] = False
     app.config["TESTING"] = True
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"  # Use in-memory DB for tests
 
@@ -30,3 +33,19 @@ def init_database(app):
     yield db  # Provide database to tests
     db.session.remove()
     db.drop_all()
+
+@pytest.fixture
+def authenticated_client(client, init_database):
+    """Ensure a user is logged in before testing protected routes."""
+    user = User(username="testuser2", email="test@example.com")
+    user.set_password("password123")
+    db.session.add(user)
+    db.session.commit()
+
+    client.post(url_for("views.login"), data={
+        "username": "testuser2",
+        "password": "password123"
+    }, follow_redirects=True)
+
+    return client
+
