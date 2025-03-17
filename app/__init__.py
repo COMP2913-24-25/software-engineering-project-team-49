@@ -7,6 +7,7 @@ from flask_login import LoginManager
 import threading
 import time
 from datetime import datetime
+from config import config_dict
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -52,8 +53,15 @@ def check_auctions(app):
         time.sleep(60)  # Run every 60 seconds
 
 def create_app():
+    import os
     app = Flask(__name__)
-    app.config.from_object('config')
+    #app.config.from_object('config')
+
+    # Determine environment (default to 'development')
+    env = os.getenv('FLASK_ENV', 'development')
+
+    # Load the appropriate configuration
+    app.config.from_object(config_dict.get(env, 'development'))
 
     Bootstrap(app)
     csrf = CSRFProtect(app)
