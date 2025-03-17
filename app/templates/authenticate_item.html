@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block page_content %}
+<div class="container mt-5">
+    <form method="POST" action="{{ url_for('views.authenticate_item', item_id=item.id) }}">
+        <button type="submit" name="action" value="approve" class="btn btn-success">Approve Authenticity</button>
+        <button type="submit" name="action" value="reject" class="btn btn-danger">Reject Authenticity</button>
+    </form>
+</div>
+{% endblock %}

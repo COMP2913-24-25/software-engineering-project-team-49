@@ -63,6 +63,9 @@ class AvailabilityForm(FlaskForm):
     friday_end = TimeField("Sunday Start", format='%H%M', validators=[DataRequired()])
     saturday_start = TimeField("Sunday Start", format='%H%M', validators=[DataRequired()])
     saturday_end = TimeField("Sunday Start", format='%H%M', validators=[DataRequired()])
+    submit = SubmitField("Set availability")
+
+class UnavailableForm(FlaskForm):
     disable_week = BooleanField("Take the week off (Holiday/Illness)")
     submit = SubmitField("Set availability")
 
