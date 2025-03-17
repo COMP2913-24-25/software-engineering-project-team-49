@@ -15,6 +15,7 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')  # Use PostgreSQL in production
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 config_dict = {
     'development': DevelopmentConfig,
