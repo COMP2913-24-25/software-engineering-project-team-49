@@ -81,3 +81,7 @@ class CategoryForm(FlaskForm):
 class AssignExpertForm(FlaskForm):
     expert = SelectField('Select Expert', coerce=int, validators=[DataRequired()])
     submit = SubmitField('Assign Expert')
+
+class AuthenticateForm(FlaskForm):
+    approve = SubmitField("Approve Authenticity")
+    reject = SubmitField("Reject Authenticity")

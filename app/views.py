@@ -7,8 +7,8 @@ from flask import render_template, flash, request, redirect, url_for
 from flask_login import login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
-from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm
-from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus
+from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm
+from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus
 
 
 @views.route('/')
@@ -253,10 +253,29 @@ def select_category():
         return redirect(url_for('views.expert'))
     return render_template('select_category.html', form=form)
 
-@views.route('/authenticate_item/<int:item_id>', methods=['POST'])
+@views.route('/authenticate_item/<int:item_id>', methods=['GET','POST'])
 @login_required
 def authenticate_item(item_id):
-    return render_template('authenticate_item')
+    item = Item.query.get_or_404(item_id)
+    authentication = AuthenticationRequest.query.filter_by(item_id=item.id).first()
+    action = request.form.get('action')
+    form = AuthenticateForm()
+    if form.validate_on_submit():
+        if action == 'approve':
+            authentication.status = AuthenticationStatus.APPROVED.value
+            item.status = ItemStatus.ACTIVE.value
+            item.is_authenticated = True
+            db.session.commit()
+            flash('Item marked as genuine', 'success')
+            return redirect(url_for('views.expert'))
+        elif action == 'reject':
+            authentication.status = AuthenticationStatus.REJECTED.value
+            item.status = ItemStatus.ACTIVE.value
+            item.is_authenticated = False
+            db.session.commit()
+            flash('Item marked as unknown', 'info')
+            return redirect(url_for('views.expert'))
+    return render_template('authenticate_item.html', item=item, form=form)
 
 @views.route('/manager', methods=['GET', 'POST'])
 @login_required
