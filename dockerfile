@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 5000
 
 # Command to run the application using gunicorn
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "run:app"]
+CMD ["sh", "-c", "flask db upgrade && gunicorn -w 2 -b 0.0.0.0:5000 run:app"]
