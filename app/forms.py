@@ -72,7 +72,7 @@ class SearchForm(FlaskForm):
 
 
 class CategoryForm(FlaskForm):
-    categories = QuerySelectMultipleField('Select Categories', query_factory=lambda: Category.query.all(), get_label='name')
+    expert_categories = QuerySelectMultipleField('Select Categories', query_factory=lambda: Category.query.all(), get_label='name')
     submit = SubmitField('Save')
 
 class AssignExpertForm(FlaskForm):

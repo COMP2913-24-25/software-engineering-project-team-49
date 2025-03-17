@@ -8,7 +8,7 @@ from flask_login import login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm
-from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage
+from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus
 
 
 @views.route('/')
@@ -232,7 +232,7 @@ def select_category():
     form = CategoryForm()
     if form.validate_on_submit():
         ExpertCategory.query.filter_by(user_id=current_user.id).delete()
-        for category in form.categories.data:
+        for category in form.expert_categories.data:
             expertise = ExpertCategory(user_id=current_user.id, category=category.name)
             db.session.add(expertise)
         db.session.commit()
