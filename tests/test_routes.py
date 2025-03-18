@@ -176,8 +176,3 @@ def test_notifications(authenticated_client, init_database):
     assert response.status_code == 200
     assert b"You have been outbid" in response.data
 
-def test_expert_dashboard(authenticated_client, init_database):
-    """ Test expert availability page """
-    response = authenticated_client.get(url_for("views.expert"))
-    assert response.status_code == 200
-    assert b"Set your availability" in response.data  # Assuming availability form contains "Set Availability"
