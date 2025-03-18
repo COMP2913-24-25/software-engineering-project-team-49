@@ -2,13 +2,14 @@
 
 # Set environment
 export FLASK_ENV=production
+export FLASK_APP=app:create_app
 
 # Try to run migrations if needed
 echo "Attempting database migrations..."
 flask db init || echo "Database already initialized"
 echo "Running migrations..."
 flask db stamp head
-flask db migrate
+flask db migrate -m "Initial migration"
 echo "Upgrading database..."
 flask db upgrade
 
