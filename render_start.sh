@@ -2,14 +2,12 @@
 
 # Set environment
 export FLASK_ENV=production
-export FLASK_APP=app:create_app  # Critical for migrations
+export FLASK_APP=run.py  # Ensure the correct entry point
 
-# Run migrations (force stamping to avoid issues)
+# Run migrations (only if needed)
 echo "Running migrations..."
-flask db init --directory=migrations  # Ensure correct directory
-flask db stamp head
-flask db migrate -m "Render migration"
-flask db upgrade
+flask db migrate -m "Auto migration" || true
+flask db upgrade || true
 
 # Start the app
 echo "Starting the application..."
