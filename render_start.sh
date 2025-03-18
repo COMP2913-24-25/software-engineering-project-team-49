@@ -5,9 +5,18 @@ export FLASK_ENV=production
 
 # Try to run migrations if needed
 echo "Attempting database migrations..."
-flask db stamp head || echo "Failed to stamp head, continuing..."
-flask db migrate || echo "Failed to migrate, continuing..."
-flask db upgrade || echo "Failed to upgrade, continuing..."
+flask db init || echo "Database already initialized"
+echo "Running migrations..."
+flask db stamp head
+flask db migrate
+echo "Upgrading database..."
+flask db upgrade
+
+# Verify migration success
+if [ $? -ne 0 ]; then
+    echo "ERROR: Database migration failed, exiting"
+    exit 1
+fi
 
 # Start the app with gunicorn
 echo "Starting the application..."

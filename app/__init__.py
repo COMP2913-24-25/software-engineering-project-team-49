@@ -15,14 +15,14 @@ login_manager = LoginManager()
 def check_auctions(app):
     """Background thread that checks for expired auctions."""
     # Initial delay to ensure database is set up
-    time.sleep(60)
+    time.sleep(120)
     while True:
         try:
             with app.app_context():  # Ensure we have access to the database
                 now = datetime.utcnow()
 
                 from app.models import db, Item, Bid, Notification, ItemStatus
-                
+
                 # Find items whose auction has ended but still marked as ACTIVE
                 expired_items = Item.query.filter(Item.end_time <= now, Item.status == ItemStatus.ACTIVE.value).all()
 
