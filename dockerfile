@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 5000
 
 # Command to run the application using gunicorn
-CMD ["./render_start.sh"]
+CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:5000", "run:app"]
