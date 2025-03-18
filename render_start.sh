@@ -6,8 +6,8 @@ export FLASK_APP=run.py  # Ensure the correct entry point
 
 # Run migrations (only if needed)
 echo "Running migrations..."
-flask db migrate -m "Auto migration" || true
-flask db upgrade || true
+#flask db migrate -m "Auto migration" || true
+flask db upgrade --directory migrations_postgres || true
 
 # Start the app
 echo "Starting the application..."
