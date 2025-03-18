@@ -14,41 +14,51 @@ login_manager = LoginManager()
 
 def check_auctions(app):
     """Background thread that checks for expired auctions."""
-    from app.models import db, Item, Bid, Notification, ItemStatus
+    # Initial delay to ensure database is set up
+    time.sleep(60)
     while True:
-        with app.app_context():  # Ensure we have access to the database
-            now = datetime.utcnow()
+        try:
+            with app.app_context():  # Ensure we have access to the database
+                now = datetime.utcnow()
 
-            # Find items whose auction has ended but still marked as ACTIVE
-            expired_items = Item.query.filter(Item.end_time <= now, Item.status == ItemStatus.ACTIVE.value).all()
+                from app.models import db, Item, Bid, Notification, ItemStatus
+                
+                # Find items whose auction has ended but still marked as ACTIVE
+                expired_items = Item.query.filter(Item.end_time <= now, Item.status == ItemStatus.ACTIVE.value).all()
 
-            for item in expired_items:
-                # Find the highest bid
-                highest_bid = Bid.query.filter(Bid.item_id == item.id).order_by(Bid.amount.desc()).first()
+                for item in expired_items:
+                    # Find the highest bid
+                    highest_bid = Bid.query.filter(Bid.item_id == item.id).order_by(Bid.amount.desc()).first()
 
-                if highest_bid:
-                    # Notify the winner
-                    winner_notification = Notification(
-                        user_id=highest_bid.user_id,
-                        item_id=item.id,
-                        type="won",
-                        message=f"Congratulations! You have won the auction for '{item.name}' with a bid of £{highest_bid.amount:.2f}."
-                    )
-                    db.session.add(winner_notification)
-                    item.status = ItemStatus.SOLD.value
+                    if highest_bid:
+                        # Notify the winner
+                        winner_notification = Notification(
+                            user_id=highest_bid.user_id,
+                            item_id=item.id,
+                            type="won",
+                            message=f"Congratulations! You have won the auction for '{item.name}' with a bid of £{highest_bid.amount:.2f}."
+                        )
+                        db.session.add(winner_notification)
+                        item.status = ItemStatus.SOLD.value
 
-                else:
-                    # No bids, so notify the seller
-                    seller_notification = Notification(
-                        user_id=item.seller_id,
-                        item_id=item.id,
-                        type="ended",
-                        message=f"Your auction for '{item.name}' has ended with no bids."
-                    )
-                    db.session.add(seller_notification)
-                    item.status = ItemStatus.EXPIRED.value
+                    else:
+                        # No bids, so notify the seller
+                        seller_notification = Notification(
+                            user_id=item.seller_id,
+                            item_id=item.id,
+                            type="ended",
+                            message=f"Your auction for '{item.name}' has ended with no bids."
+                        )
+                        db.session.add(seller_notification)
+                        item.status = ItemStatus.EXPIRED.value
 
-            db.session.commit()
+                db.session.commit()
+        except Exception as e:
+            # Log the error but don't crash
+            print(f"Error in auction check thread: {e}")
+            if 'app' in locals():
+                with app.app_context():
+                    db.session.rollback()
 
         time.sleep(60)  # Run every 60 seconds
 
