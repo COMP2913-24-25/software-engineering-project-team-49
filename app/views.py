@@ -193,7 +193,7 @@ def expert():
 def select_availability():
     form = AvailabilityForm()
     unavailable = UnavailableForm()
-    if 'available_submit' in request.form and form.validate_on_submit():
+    if 'available_submit' in request.form:
         ExpertAvailability.query.filter_by(user_id=current_user.id).delete()
         availability_data = {
             "Sunday": (form.sunday_start.data, form.sunday_end.data),
@@ -204,18 +204,18 @@ def select_availability():
             "Friday": (form.friday_start.data, form.friday_end.data),
             "Saturday": (form.saturday_start.data, form.saturday_end.data),
         }
-        for day, (start, end) in availability_data:
+        for day, (start, end) in availability_data.items():
             new_availability = ExpertAvailability(user_id=current_user.id,
                                                          day_of_week=day,
-                                                         start_time=start,
-                                                         end_time=end,
+                                                         start_time = datetime.combine(datetime.today(), start),
+                                                         end_time = datetime.combine(datetime.today(), end),
                                                          status=AvailabilityStatus.AVAILABLE
                                                         )
-        db.session.add(new_availability)
-        db.session.commit()
+            db.session.add(new_availability)
+            db.session.commit()
         flash("Availability Added!", "success")
         return redirect(url_for('views.expert'))
-    elif 'unavailable_submit' in request.form and unavailable.validate_on_submit():
+    elif 'unavailable_submit' in request.form:
         ExpertAvailability.query.filter_by(user_id=current_user.id).delete()
         availability_data = {
             "Sunday": ("08:00", "20:00"),
