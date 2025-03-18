@@ -1,5 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAreaField, DecimalField, TimeField, BooleanField
+from wtforms_sqlalchemy.fields import QuerySelectMultipleField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange
 from .models import User, Category
 
@@ -15,6 +16,10 @@ class SignUpForm(FlaskForm):
         user = User.query.filter_by(username=username.data).first()
         if user:
             raise ValidationError("Username already taken.")
+    def validate_email(self, email):
+        user = User.query.filter_by(email=email.data).first()
+        if user:
+            raise ValidationError("Email already taken")
         
 class LogInForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
@@ -48,23 +53,38 @@ class BidItemForm(FlaskForm):
             raise ValidationError(f"Bid must be at least £{min_bid:.2f}.")
 
 class AvailabilityForm(FlaskForm):
-    sunday_start = TimeField("Sunday Start", format='%H%M', validators=[DataRequired()])
-    sunday_end = TimeField("Sunday End", format='%H%M', validators=[DataRequired()])
-    monday_start = TimeField("Monday Start", format='%H%M', validators=[DataRequired()])
-    monday_end = TimeField("Monday End", format='%H%M', validators=[DataRequired()])
-    tuesday_start = TimeField("Tuesday Start", format='%H%M', validators=[DataRequired()])
-    tuesday_end = TimeField("Tuesday End", format='%H%M', validators=[DataRequired()])
-    wednesday_start = TimeField("Wednesday Start", format='%H%M', validators=[DataRequired()])
-    wednesday_end = TimeField("Wednesday End", format='%H%M', validators=[DataRequired()])
-    thursday_start = TimeField("Thursday Start", format='%H%M', validators=[DataRequired()])
-    thursday_end = TimeField("Thursday End", format='%H%M', validators=[DataRequired()])
-    friday_start = TimeField("Sunday Start", format='%H%M', validators=[DataRequired()])
-    friday_end = TimeField("Sunday Start", format='%H%M', validators=[DataRequired()])
-    saturday_start = TimeField("Sunday Start", format='%H%M', validators=[DataRequired()])
-    saturday_end = TimeField("Sunday Start", format='%H%M', validators=[DataRequired()])
+    sunday_start = TimeField("Sunday Start", format='%H:%M', validators=[DataRequired()])
+    sunday_end = TimeField("Sunday End", format='%H:%M', validators=[DataRequired()])
+    monday_start = TimeField("Monday Start", format='%H:%M', validators=[DataRequired()])
+    monday_end = TimeField("Monday End", format='%H:%M', validators=[DataRequired()])
+    tuesday_start = TimeField("Tuesday Start", format='%H:%M', validators=[DataRequired()])
+    tuesday_end = TimeField("Tuesday End", format='%H:%M', validators=[DataRequired()])
+    wednesday_start = TimeField("Wednesday Start", format='%H:%M', validators=[DataRequired()])
+    wednesday_end = TimeField("Wednesday End", format='%H:%M', validators=[DataRequired()])
+    thursday_start = TimeField("Thursday Start", format='%H:%M', validators=[DataRequired()])
+    thursday_end = TimeField("Thursday End", format='%H:%M', validators=[DataRequired()])
+    friday_start = TimeField("Friday Start", format='%H:%M', validators=[DataRequired()])
+    friday_end = TimeField("Friday Start", format='%H:%M', validators=[DataRequired()])
+    saturday_start = TimeField("Saturday Start", format='%H:%M', validators=[DataRequired()])
+    saturday_end = TimeField("Saturday Start", format='%H:%M', validators=[DataRequired()])
+    submit = SubmitField("Set availability")
+
+class UnavailableForm(FlaskForm):
     disable_week = BooleanField("Take the week off (Holiday/Illness)")
     submit = SubmitField("Set availability")
 
 class SearchForm(FlaskForm):
     query = StringField('Search Auctions', validators=[DataRequired()])
     submit = SubmitField('Search')
+
+class CategoryForm(FlaskForm):
+    expert_categories = QuerySelectMultipleField('Select Categories', query_factory=lambda: Category.query.all(), get_label='name')
+    submit = SubmitField('Save')
+
+class AssignExpertForm(FlaskForm):
+    expert = SelectField('Select Expert', coerce=int, validators=[DataRequired()])
+    submit = SubmitField('Assign Expert')
+
+class AuthenticateForm(FlaskForm):
+    approve = SubmitField("Approve Authenticity")
+    reject = SubmitField("Reject Authenticity")

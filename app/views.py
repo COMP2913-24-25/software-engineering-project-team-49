@@ -7,8 +7,8 @@ from flask import render_template, flash, request, redirect, url_for
 from flask_login import login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
-from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm
-from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, UserPriority
+from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm
+from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus
 
 
 @views.route('/')
@@ -34,14 +34,14 @@ def login():
     if form.validate_on_submit():
         User = models.User.query.filter_by(username=form.username.data).first()
         if User and User.check_password(form.password.data):
-            if User.is_expert():
-                flash('Successfully Logged In!', 'success')
-                login_user(User)
-                return redirect(url_for('views.expert'))
-            elif User.is_manager():
-                flash('Successfully Logged In!', 'success')
+            if User.is_manager():
+                flash('Successfully Logged In!')
                 login_user(User)
                 return redirect(url_for('views.manager'))
+            elif User.is_expert():
+                flash('Successfully Logged In!')
+                login_user(User)
+                return redirect(url_for('views.expert'))
             else:
                 flash('Successfully Logged In!', 'success')
                 login_user(User)
@@ -185,41 +185,97 @@ def notifications():
 @views.route('/expert', methods=['GET', 'POST'])
 @login_required
 def expert():
-    DAYS_OF_WEEK = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    pending_items = Item.query.filter_by(status=ItemStatus.PENDING.value).all()
+    return render_template('expert.html', items=pending_items)
+
+@views.route('/select_availability', methods=['GET', 'POST'])
+@login_required
+def select_availability():
     form = AvailabilityForm()
-    if form.validate_on_submit():
+    unavailable = UnavailableForm()
+    if 'available_submit' in request.form:
         ExpertAvailability.query.filter_by(user_id=current_user.id).delete()
-        if form.disable_week.data:
-            for day in DAYS_OF_WEEK:
-                new_availability = models.ExpertAvailability(user_id=current_user.id,
-                                                             day_of_week=day,
-                                                             start_time=datetime.strptime("08:00", "%H%M").time(),
-                                                             end_time=datetime.strptime("20:00", "%H%M").time(),
-                                                             status=models.AvailabilityStatus.UNAVAILABLE
-                                                            )
-                db.session.add(new_availability)
-        else:
-            availability_data = {
-                "Sunday": (form.sunday_start.data, form.sunday_end.data),
-                "Monday": (form.monday_start.data, form.monday_end.data),
-                "Tuesday": (form.tuesday_start.data, form.tuesday_end.data),
-                "Wednesday": (form.wednesday_start.data, form.wednesday_end.data),
-                "Thursday": (form.thursday_start.data, form.thursday_end.data),
-                "Friday": (form.friday_start.data, form.friday_end.data),
-                "Saturday": (form.saturday_start.data, form.saturday_end.data),
-            }
-            for day, (start, end) in availability_data:
-                new_availability = models.ExpertAvailability(user_id=current_user.id,
-                                                             day_of_week=day,
-                                                             start_time=start,
-                                                             end_time=end,
-                                                             status=models.AvailabilityStatus.AVAILABLE
-                                                            )
-                db.session.add(new_availability)
+        availability_data = {
+            "Sunday": (form.sunday_start.data, form.sunday_end.data),
+            "Monday": (form.monday_start.data, form.monday_end.data),
+            "Tuesday": (form.tuesday_start.data, form.tuesday_end.data),
+            "Wednesday": (form.wednesday_start.data, form.wednesday_end.data),
+            "Thursday": (form.thursday_start.data, form.thursday_end.data),
+            "Friday": (form.friday_start.data, form.friday_end.data),
+            "Saturday": (form.saturday_start.data, form.saturday_end.data),
+        }
+        for day, (start, end) in availability_data.items():
+            new_availability = ExpertAvailability(user_id=current_user.id,
+                                                         day_of_week=day,
+                                                         start_time = datetime.combine(datetime.today(), start),
+                                                         end_time = datetime.combine(datetime.today(), end),
+                                                         status=AvailabilityStatus.AVAILABLE
+                                                        )
+            db.session.add(new_availability)
             db.session.commit()
         flash("Availability Added!", "success")
         return redirect(url_for('views.expert'))
-    return render_template('expert.html', form=form)
+    elif 'unavailable_submit' in request.form:
+        ExpertAvailability.query.filter_by(user_id=current_user.id).delete()
+        availability_data = {
+            "Sunday": ("08:00", "20:00"),
+            "Monday": ("08:00", "20:00"),
+            "Tuesday": ("08:00", "20:00"),
+            "Wednesday": ("08:00", "20:00"),
+            "Thursday": ("08:00", "20:00"),
+            "Friday": ("08:00", "20:00"),
+            "Saturday": ("08:00", "20:00"),
+        }
+        for day, (start, end) in availability_data.items():
+            new_availability = ExpertAvailability(user_id=current_user.id,
+                                                         day_of_week=day,
+                                                         start_time = datetime.combine(datetime.today(), datetime.strptime(start, "%H:%M").time()),
+                                                         end_time = datetime.combine(datetime.today(), datetime.strptime(end, "%H:%M").time()),
+                                                         status=AvailabilityStatus.UNAVAILABLE
+                                                        )
+            db.session.add(new_availability)
+            db.session.commit()
+        flash("Availability Added!", "success")
+        return redirect(url_for('views.expert'))
+    return render_template('select_availability.html', form=form, unavailable=unavailable)
+
+@views.route('/select_category', methods=['GET', 'POST'])
+@login_required
+def select_category():
+    form = CategoryForm()
+    if form.validate_on_submit():
+        ExpertCategory.query.filter_by(user_id=current_user.id).delete()
+        for category in form.expert_categories.data:
+            expertise = ExpertCategory(user_id=current_user.id, category=category.name)
+            db.session.add(expertise)
+        db.session.commit()
+        flash('Expertise preferences updated!')
+        return redirect(url_for('views.expert'))
+    return render_template('select_category.html', form=form)
+
+@views.route('/authenticate_item/<int:item_id>', methods=['GET','POST'])
+@login_required
+def authenticate_item(item_id):
+    item = Item.query.get_or_404(item_id)
+    authentication = AuthenticationRequest.query.filter_by(item_id=item.id).first()
+    action = request.form.get('action')
+    form = AuthenticateForm()
+    if form.validate_on_submit():
+        if action == 'approve':
+            authentication.status = AuthenticationStatus.APPROVED.value
+            item.status = ItemStatus.ACTIVE.value
+            item.is_authenticated = True
+            db.session.commit()
+            flash('Item marked as genuine', 'success')
+            return redirect(url_for('views.expert'))
+        elif action == 'reject':
+            authentication.status = AuthenticationStatus.REJECTED.value
+            item.status = ItemStatus.ACTIVE.value
+            item.is_authenticated = False
+            db.session.commit()
+            flash('Item marked as unknown', 'info')
+            return redirect(url_for('views.expert'))
+    return render_template('authenticate_item.html', item=item, form=form)
 
 @views.route('/manager', methods=['GET', 'POST'])
 @login_required
@@ -227,3 +283,32 @@ def manager():
     pending_items = Item.query.filter_by(status=ItemStatus.PENDING.value).all()
     experts = User.query.filter_by(priority=UserPriority.EXPERT.value).all()
     return render_template('manager.html', items=pending_items, experts=experts)
+
+@views.route('/assign_expert/<int:item_id>', methods=['GET', 'POST'])
+@login_required
+def assign_expert(item_id):
+    item = Item.query.get_or_404(item_id)
+    experts = User.query.join(ExpertCategory).filter(ExpertCategory.category == item.category_rel.name, User.priority == UserPriority.EXPERT.value).all()
+    print(f"Eligible experts for category {item.category_id}: {experts}")
+    form = AssignExpertForm()
+    form.expert.choices = [(expert.id, expert.username) for expert in experts]
+    if form.validate_on_submit():
+        authentication = AuthenticationRequest.query.filter_by(item_id=item.id).first()
+        authentication.expert_id = form.expert.data
+        authentication_message = AuthenticationMessage(request_id=authentication.id,
+                                                       sender_id=current_user.id,
+                                                       message="Please review this item: " + item.name,
+                                                       created_at=datetime.utcnow()
+                                                       )
+        notification = Notification(user_id=form.expert.data, 
+                                    item_id=item.id,
+                                    type="authentication",
+                                    message="Please review this item: " + item.name,
+                                    created_at=datetime.utcnow()
+                                    )
+        db.session.add(authentication_message)
+        db.session.add(notification)
+        db.session.commit()
+        flash(f"Expert assigned successfully!", "success")
+        return redirect(url_for('views.manager'))
+    return render_template('assign_expert.html', form=form, item=item)

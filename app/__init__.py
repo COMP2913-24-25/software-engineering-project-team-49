@@ -61,7 +61,7 @@ def check_auctions(app):
                     db.session.rollback()
 
         time.sleep(60)  # Run every 60 seconds
-
+        
 def create_app():
     import os
     app = Flask(__name__)

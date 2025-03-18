@@ -3,27 +3,48 @@
 <div class="container mt-5">
     <h1>Welcome to the Expert Page</h1>
     <h2>Set your availability:</h2>
-    <form method="POST">
-        {{ form.hidden_tag() }}
-        <div class="form-check mb-3">
-            {{ form.disable_week(class="form-check-input") }}
-            <label class="form-check-label"></label>
-        </div>
-        <h4>Set Availability for each day</h4>
-        {% for day in ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] %}
-        <div class="row mb-3">
-            <div class="col md-4">
-                <strong>{{ day }}</strong>
-            </div>
-            <div class="col md-4">
-                {{ form[day.lower() ~ "_start"] (class="form-control") }}
-            </div>
-            <div class="col md-4">
-                {{ form[day.lower() ~ "_end"] (class="form-control") }}
-            </div>
-        </div>
-        {% endfor %}
-        <button type="submit" class="btn btn-primary mt-3">{{ form.submit.label }}</button>
-    </form>
+    <div>
+        <a href="{{ url_for('views.select_availability') }}">Change expert availability</a>
+    </div>
+    <div>
+        <a href="{{ url_for('views.select_category') }}">Change expertise categories</a>
+    </div>
+    <div>
+        <a href="{{ url_for('views.notifications') }}">Check notifications</a>
+    </div>
+    <h2>Pending Items</h2>
+    {% if items %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Item Name</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th>Minimum Price</th>
+                    <th>Seller</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.description }}</td>
+                    <td>{{ item.category_id }}</td>
+                    <td>${{ item.minimum_price }}</td>
+                    <td>{{ item.seller_id }}</td>
+                    <td>{{ item.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ item.end_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        <a href="{{ url_for('views.authenticate_item', item_id=item.id) }}" class="btn btn-info">Authenticate Item</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No pending items available.</p>
+    {% endif %}
 </div>
 {% endblock %}

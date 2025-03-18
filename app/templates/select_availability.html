@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h1>Welcome to the Expert Page</h1>
+    <h2>Set your availability:</h2>
+    <form method="POST" action="{{ url_for('views.select_availability') }}">
+        {{ unavailable.hidden_tag() }}
+        <div class="form-check mb-3">
+            {{ unavailable.disable_week(class="form-check-input") }}
+            <label class="form-check-label">Unavailable for Whole Week</label>
+        </div>
+        <button name="unavailable_submit" type="submit" class="btn btn-primary mt-3">{{ unavailable.submit.label }}</button>
+    </form>
+    <form method="POST" action="{{ url_for('views.select_availability') }}">
+        {{ form.hidden_tag() }}
+        <h4>Set Availability for each day</h4>
+        {% for day in ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] %}
+        <div class="row mb-3">
+            <div class="col md-4">
+                <strong>{{ day }}</strong>
+            </div>
+            <div class="col md-4">
+                {{ form[day.lower() ~ "_start"] (class="form-control") }}
+            </div>
+            <div class="col md-4">
+                {{ form[day.lower() ~ "_end"] (class="form-control") }}
+            </div>
+        </div>
+        {% endfor %}
+        <button name="available_submit" type="submit" class="btn btn-primary mt-3">{{ form.submit.label }}</button>
+    </form>
+</div>
+{% endblock %}
