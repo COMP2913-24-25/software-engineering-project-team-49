@@ -7,7 +7,7 @@ from flask import render_template, flash, request, redirect, url_for
 from flask_login import login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
-from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm
+from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm, ConfigFeeForm
 from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus
 
 
@@ -18,15 +18,26 @@ def welcome():
 
 @views.route('/signup', methods=['GET', 'POST'])
 def signup():
-	form = SignUpForm()
-	if form.validate_on_submit():
-		new_user = User(first_name = form.first_name.data, last_name = form.last_name.data ,username=form.username.data, email=form.email.data)
-		new_user.set_password(form.password.data)
-		db.session.add(new_user)
-		db.session.commit()
-		flash('Account successfully created! You will now be redirected to the login page!', 'success')
-		return redirect(url_for('views.login'))
-	return render_template('signup.html', form=form)
+    form = SignUpForm()
+    if form.validate_on_submit():
+        if form.type.data == '1':
+            new_user = User(first_name=form.first_name.data, last_name=form.last_name.data, username=form.username.data, email=form.email.data)
+            new_user.set_password(form.password.data)
+            db.session.add(new_user)
+            db.session.commit()
+        elif form.type.data == '2':
+            new_user = User(first_name=form.first_name.data, last_name=form.last_name.data, username=form.username.data, email=form.email.data, priority=UserPriority.EXPERT.value)
+            new_user.set_password(form.password.data)
+            db.session.add(new_user)
+            db.session.commit()
+        else:
+            new_user = User(first_name=form.first_name.data, last_name=form.last_name.data, username=form.username.data, email=form.email.data, priority=UserPriority.MANAGER.value)
+            new_user.set_password(form.password.data)
+            db.session.add(new_user)
+            db.session.commit()
+        flash('Account successfully created! You will now be redirected to the login page!', 'success')
+        return redirect(url_for('views.login'))
+    return render_template('signup.html', form=form)
 
 @views.route('/login', methods=['GET', 'POST'])
 def login():
@@ -312,3 +323,8 @@ def assign_expert(item_id):
         flash(f"Expert assigned successfully!", "success")
         return redirect(url_for('views.manager'))
     return render_template('assign_expert.html', form=form, item=item)
+
+@views.route('/configure_fees/<int:item_id>', methods=['GET', 'POST'])
+def configure_fees(item_id):
+    form = ConfigFeeForm()
+    return render_template('configure_fees.html', form=form)

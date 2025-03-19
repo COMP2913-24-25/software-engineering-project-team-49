@@ -29,6 +29,9 @@
                     <td>
                         <a href="{{ url_for('views.assign_expert', item_id=item.id) }}" class="btn btn-info">Assign Expert</a>
                     </td>
+                    <td>
+                        <a href="{{ url_for('views.configure_fees', item_id=item.id) }}" class="btn btn-info">Configure percentage costs</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

@@ -11,6 +11,7 @@ class SignUpForm(FlaskForm):
     email = StringField('email', validators=[DataRequired(), Length(min = 3, max=100, message="Email should be between 3 and 100 characters")])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6, message="Password should be minimum 6 characters.")])
     confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password', message="Passwords should match.")])
+    type = SelectField('Are you a user, expert or manager?', choices=[('1', 'User'), ('2', 'Expert'), ('3', 'Manager')])
     submit = SubmitField('Sign Up')
     def validate_username(self, username):
         user = User.query.filter_by(username=username.data).first()
@@ -88,3 +89,8 @@ class AssignExpertForm(FlaskForm):
 class AuthenticateForm(FlaskForm):
     approve = SubmitField("Approve Authenticity")
     reject = SubmitField("Reject Authenticity")
+
+class ConfigFeeForm(FlaskForm):
+    default_fee = DecimalField('Default fee percentage is 1%', validators=[DataRequired()], places=2)
+    expert_fee = DecimalField('Expert Approved fee percenatge is 5%', validators=[DataRequired()], places=2)
+    submit = SubmitField('Submit')

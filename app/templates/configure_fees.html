@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h1>Configure percentage fees</h1>
+    <form method= "POST">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            <label class="form-label">Default fee percentage is 1%</label>
+            {{ form.default_fee(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Expert Approved fee percenatge is 5%</label>
+            {{ form.expert_fee(class="form-control") }}
+        </div>
+        <button type="submit" class="btn btn-primary">{{ form.submit.label }}</button>
+    </form>
+</div>
+{% endblock %}
