@@ -2,10 +2,13 @@ from flask import Blueprint
 
 views = Blueprint("views", __name__)
 
+import os
 from app import models, db
 from flask import render_template, flash, request, redirect, url_for
 from flask_login import login_user, current_user, login_required, logout_user
+from flask import current_app
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm
 from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus
@@ -93,6 +96,7 @@ def list_item():
             )
             db.session.add(new_item)
             db.session.commit()
+
             authentication = AuthenticationRequest(
                   item_id = new_item.id,
                   requester_id = current_user.id
@@ -113,6 +117,21 @@ def list_item():
             )
             db.session.add(new_item)
             db.session.commit()
+
+            image_folder = current_app.config['UPLOAD_FOLDER']
+            os.makedirs(image_folder, exist_ok=True)
+
+            if form.images.data:
+                for image in form.images.data:
+                    filename = secure_filename(image.filename)
+                    image_path = os.path.join(image_folder, filename)
+                    image.save(image_path)
+
+                    item_image = ItemImage(item_id=new_item.id, image_path=f'static/uploads/{filename}')
+                    db.session.add(item_image)
+
+                db.session.commit()
+                
         flash('Item listed successfully!', 'success')
         return redirect(url_for('views.home'))
 

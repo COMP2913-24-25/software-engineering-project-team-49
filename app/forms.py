@@ -3,6 +3,7 @@ from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAr
 from wtforms_sqlalchemy.fields import QuerySelectMultipleField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange
 from .models import User, Category
+from flask_wtf.file import FileField, FileAllowed, MultipleFileField
 
 class SignUpForm(FlaskForm):
     first_name= StringField('first name')
@@ -33,6 +34,7 @@ class AuctionItemForm(FlaskForm):
     minimum_price = DecimalField('Minimum Price (£)', validators=[DataRequired(), NumberRange(min=0)])
     duration = SelectField('Auction Duration', choices=[('1', '1 Day'), ('2', '2 Days'), ('3', '3 Days'), ('4', '4 Days'), ('5', '5 Days')])
     authentication = SelectField('Atheticate Item (5 percent fee if authenticated)', choices=[('1', 'Yes'), ('2', 'No')])
+    images = MultipleFileField('Upload Images', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Only images allowed!')])
     submit = SubmitField('List Item')
 
     def __init__(self, *args, **kwargs):
