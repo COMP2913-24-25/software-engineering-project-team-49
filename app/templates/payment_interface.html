@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block page_content %}
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+        {{ form.card_number.label }}
+        {{ form.card_number(class="form-control") }}
+        {{ form.expiry_month.label }}
+        {{ form.expiry_month(class="form-control") }}
+        {{ form.expiry_year.label }}
+        {{ form.expiry_year(class="form-control") }}
+        {{ form.cvv.label }}
+        {{ form.cvv(class="form-control") }}
+        {{ form.save_card.label }}
+        {{ form.save_card(class="form-control") }}
+    </div>
+    <button type="submit" class="btn btn-success">Pay Now</button>
+</form>
+{% endblock %}
