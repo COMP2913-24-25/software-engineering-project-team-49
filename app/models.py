@@ -13,8 +13,9 @@ class UserPriority(Enum):
 class ItemStatus(Enum):
     PENDING = 1
     ACTIVE = 2
-    SOLD = 3
-    EXPIRED = 4
+    PAYING = 3
+    SOLD = 4
+    EXPIRED = 5
 
 class AuthenticationStatus(Enum):
     PENDING = 1
