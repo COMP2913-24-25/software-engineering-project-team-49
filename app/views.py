@@ -19,14 +19,25 @@ def welcome():
 @views.route('/signup', methods=['GET', 'POST'])
 def signup():
 	form = SignUpForm()
-	if form.validate_on_submit():
-		new_user = User(first_name = form.first_name.data, last_name = form.last_name.data ,username=form.username.data, email=form.email.data)
-		new_user.set_password(form.password.data)
-		db.session.add(new_user)
-		db.session.commit()
-		flash('Account successfully created! You will now be redirected to the login page!', 'success')
-		return redirect(url_for('views.login'))
-	return render_template('signup.html', form=form)
+    if form.validate_on_submit():
+        existing_user = User.query.filter((User.username == form.username.data) | (User.email == form.email.data)).first()
+        if existing_user:
+            flash("Username or email already in use.", "danger")
+            return redirect(url_for('views.signup'))
+
+        new_user = User(
+            first_name=form.first_name.data,
+            last_name=form.last_name.data,
+            username=form.username.data,
+            email=form.email.data,
+            password_hash=generate_password_hash(form.password.data),
+            priority=1
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        flash("Account created successfully!", "success")
+        return redirect(url_for('views.login'))
+    return render_template('signup.html', form=form)
 
 @views.route('/login', methods=['GET', 'POST'])
 def login():
@@ -54,6 +65,7 @@ def login():
 @login_required
 def logout():
     logout_user()
+    flash("You have been logged out.", "info")
     return redirect(url_for('views.welcome'))
 
 @views.route('/home')
@@ -146,32 +158,42 @@ def auction_detail(item_id):
     item = Item.query.get_or_404(item_id)
     form = BidItemForm(item_price=item.current_price)
 
-    if form.validate_on_submit():
-        # Process the bid (ensure it is valid)
-        new_bid_amount = form.bid_amount.data
-        if new_bid_amount < item.current_price * 1.1:
-            flash("Your bid must be at least 10% higher than the current price.", "danger")
-        else:
-            previous_bid = Bid.query.filter(Bid.item_id == item_id).order_by(Bid.amount.desc()).first()
-            
-            #update item price and new bid
-            item.current_price = new_bid_amount
-            new_bid = Bid(item_id=item_id, user_id = current_user.id, amount = new_bid_amount)
+    # Fetch the highest bid on item
+    highest_bid = Bid.query.filter_by(item_id=item.id).order_by(Bid.amount.desc()).first()
+
+    # If user is submitting a bid, confirm they are logged in
+    if request.method == 'POST':
+        if not current_user.is_authenticated:
+            flash("You must be logged in to place a bid.", "warning")
+            return redirect(url_for('views.login'))
+
+        if form.validate_on_submit():
+            # Prevent self-bidding
+            if item.seller_id == current_user.id:
+                flash("You cannot bid on your own item.", "danger")
+                return redirect(url_for('views.auction_detail', item_id=item.id))
+
+            # Ensure new bid is strictly greater than the last highest
+            if highest_bid and form.bid_amount.data <= highest_bid.amount:
+                flash(f"Your bid must be greater than £{highest_bid.amount:.2f}.", "danger")
+                return redirect(url_for('views.auction_detail', item_id=item.id))
+            # Create the new bid
+            new_bid = Bid(item_id=item.id, user_id=current_user.id, amount=form.bid_amount.data)
             db.session.add(new_bid)
             db.session.commit()
 
-            #make notification for previous bidder
-            if previous_bid and previous_bid.user_id != current_user.id:
+            # Notify the outbid user
+            if highest_bid and highest_bid.user_id != current_user.id:
                 notification = Notification(
-                    user_id=previous_bid.user_id,
+                    user_id=highest_bid.user_id,
                     item_id=item.id,
                     type="outbid",
-                    message=f"You have been outbid on '{item.name}'. The new bid is £{new_bid_amount:.2f}.",
+                    message=f"You have been outbid on '{item.name}'. Current highest bid: £{form.bid_amount.data:.2f}"
                 )
                 db.session.add(notification)
                 db.session.commit()
 
-            flash('Bid placed successfully!', 'success')
+            flash("Your bid has been placed successfully!", "success")
             return redirect(url_for('views.auction_detail', item_id=item.id))
 
     return render_template('auction_detail.html', item=item, form=form)
@@ -185,7 +207,14 @@ def notifications():
 @views.route('/expert', methods=['GET', 'POST'])
 @login_required
 def expert():
-    pending_items = Item.query.filter_by(status=ItemStatus.PENDING.value).all()
+    if current_user.priority != UserPriority.EXPERT.value:
+        flash("Access denied.", "danger")
+        return redirect(url_for('views.home'))
+
+    pending_items = AuthenticationRequest.query.join(Item).filter(
+        AuthenticationRequest.expert_id == current_user.id,
+        AuthenticationRequest.status == AuthenticationStatus.PENDING.value
+    ).all()
     return render_template('expert.html', items=pending_items)
 
 @views.route('/select_availability', methods=['GET', 'POST'])
