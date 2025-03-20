@@ -7,8 +7,8 @@ from flask import render_template, flash, request, redirect, url_for
 from flask_login import login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
-from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm, ConfigFeeForm
-from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus
+from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm, PaymentForm, ConfigFeeForm
+from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus, Payment
 
 
 @views.route('/')
@@ -328,3 +328,83 @@ def assign_expert(item_id):
 def configure_fees(item_id):
     form = ConfigFeeForm()
     return render_template('configure_fees.html', form=form)
+
+@views.route('/basket', methods=['GET', 'POST'])
+@login_required
+def basket():
+    paying_items = Item.query.filter(Item.status == ItemStatus.PAYING.value, Item.winner_id == current_user.id).all()
+    return render_template('basket.html', paying_items = paying_items)
+
+@views.route('/payment_interface/<int:item_id>', methods=['GET', 'POST'])
+@login_required
+def payment_interface(item_id):
+    form = PaymentForm()
+    item = Item.query.get_or_404(item_id)
+    #check if user has saved data
+    if current_user.card_number_hash and current_user.card_expiry:
+        return redirect(url_for('views.process_payment', item_id=item.id))
+
+    if form.validate_on_submit():
+        if form.save_card.data == '1':
+            current_user.card_number_hash = generate_password_hash(form.card_number.data)
+            current_user.card_expiry = f"{form.expiry_month.data}/{form.expiry_year.data}"
+            db.session.commit()
+            flash("Card details saved successfully!", "success")
+        return redirect(url_for('views.process_payment', item_id=item.id))
+
+    return render_template('payment_interface.html', form=form)
+
+@views.route('/process_payment/<int:item_id>', methods=['GET', 'POST'])
+@login_required
+def process_payment(item_id):
+    item = Item.query.get_or_404(item_id)
+    # Ensure the current user is the highest bidder
+    highest_bid = Bid.query.filter_by(item_id=item.id).order_by(Bid.amount.desc()).first()
+    
+    if highest_bid and highest_bid.user_id == current_user.id:
+        # Get fee percentage from system configuration
+        fee_percentage = 0.01  # Default 1%
+        if item.is_authenticated:
+            fee_percentage = 0.05  # 5% for authenticated items
+            
+        fee_amount = highest_bid.amount * fee_percentage
+        
+        # Create payment record
+        payment = Payment(
+            item_id=item.id,
+            buyer_id=current_user.id,
+            seller_id=item.seller_id,
+            amount=highest_bid.amount,
+            fee_percentage=fee_percentage,
+            fee_amount=fee_amount,
+            status='completed',
+            completed_at=datetime.utcnow()
+        )
+        
+        db.session.add(payment)
+        db.session.commit()
+        
+        # Send notification to seller
+        seller_notification = Notification(
+            user_id=item.seller_id,
+            item_id=item.id,
+            type="payment",
+            message=f"Payment completed for '{item.name}'. Amount: £{highest_bid.amount:.2f}"
+        )
+        #send notification to buyer
+        buyer_notification = Notification(
+            user_id=item.winner_id,
+            item_id=item.id,
+            type="payment",
+            message=f"Payment completed for '{item.name}'. Amount: £{highest_bid.amount:.2f}"
+        )
+        item.status = ItemStatus.SOLD.value
+        db.session.add(buyer_notification)
+        db.session.add(seller_notification)
+        db.session.commit()
+        
+        flash("Payment processed successfully!", "success")
+        return redirect(url_for('views.home'))
+    else:
+        flash("You are not authorized to make this payment.", "danger")
+        return redirect(url_for('views.basket'))

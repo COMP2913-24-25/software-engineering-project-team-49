@@ -3,6 +3,7 @@ from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAr
 from wtforms_sqlalchemy.fields import QuerySelectMultipleField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange
 from .models import User, Category
+from datetime import datetime, timedelta
 
 class SignUpForm(FlaskForm):
     first_name= StringField('first name')
@@ -89,6 +90,14 @@ class AssignExpertForm(FlaskForm):
 class AuthenticateForm(FlaskForm):
     approve = SubmitField("Approve Authenticity")
     reject = SubmitField("Reject Authenticity")
+
+class PaymentForm(FlaskForm):
+    card_number = StringField('Card Number', validators=[DataRequired(), Length(min=16, max=16)])
+    expiry_month = SelectField('Expiry Month', choices=[(str(i), str(i)) for i in range(1, 13)], validators=[DataRequired()])
+    expiry_year = SelectField('Expiry Year', choices=[(str(i), str(i)) for i in range(datetime.now().year, datetime.now().year + 11)], validators=[DataRequired()])
+    cvv = StringField('CVV', validators=[DataRequired(), Length(min=3, max=4)])
+    save_card = SelectField('Save Card', choices=[('1', 'Yes'), ('2', 'No')])
+    submit = SubmitField('Pay Now')
 
 class ConfigFeeForm(FlaskForm):
     default_fee = DecimalField('Default fee percentage is 1%', validators=[DataRequired()], places=2)

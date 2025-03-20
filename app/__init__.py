@@ -6,7 +6,7 @@ from flask_wtf.csrf import CSRFProtect
 from flask_login import LoginManager
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from config import config_dict
 
 db = SQLAlchemy()
@@ -39,7 +39,8 @@ def check_auctions(app):
                             message=f"Congratulations! You have won the auction for '{item.name}' with a bid of £{highest_bid.amount:.2f}."
                         )
                         db.session.add(winner_notification)
-                        item.status = ItemStatus.SOLD.value
+                        item.status = ItemStatus.PAYING.value
+                        item.winner_id = highest_bid.user_id
 
                     else:
                         # No bids, so notify the seller
