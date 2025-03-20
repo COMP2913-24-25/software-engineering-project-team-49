@@ -18,9 +18,11 @@ def welcome():
 
 @views.route('/signup', methods=['GET', 'POST'])
 def signup():
-	form = SignUpForm()
+    form = SignUpForm()
     if form.validate_on_submit():
-        existing_user = User.query.filter((User.username == form.username.data) | (User.email == form.email.data)).first()
+        existing_user = User.query.filter(
+            (User.username == form.username.data) | (User.email == form.email.data)
+        ).first()
         if existing_user:
             flash("Username or email already in use.", "danger")
             return redirect(url_for('views.signup'))
@@ -90,42 +92,45 @@ def list_item():
     form = AuctionItemForm()
 
     if form.validate_on_submit():
-        auction_end_time = datetime.utcnow() + timedelta(days=int(form.duration.data))
-        if form.authentication.data == '1':
-            new_item = models.Item(
-                name=form.name.data,
-                description=form.description.data,
-                category_id=form.category.data, 
-                minimum_price=form.minimum_price.data,
-                current_price=form.minimum_price.data,
-                seller_id=current_user.id,
-                start_time=datetime.utcnow(),
-                end_time=auction_end_time,
-                status=models.ItemStatus.PENDING.value
+        # Determine if user wants item authentication
+        authentication_requested = (form.authentication.data == '1')
+
+        # Calculate end_time for the auction
+        duration_days = int(form.duration.data)
+        end_time = datetime.utcnow() + timedelta(days=duration_days)
+
+        # Create the new item
+        new_item = Item(
+            name=form.name.data,
+            description=form.description.data,
+            seller_id=current_user.id,
+            category_id=form.category.data,
+            minimum_price=form.minimum_price.data,
+            current_price=form.minimum_price.data,
+            end_time=end_time,
+            status=ItemStatus.PENDING.value if authentication_requested else ItemStatus.ACTIVE.value,
+        )
+
+        # Handle the image file if present
+        if form.image.data:
+            filename = secure_filename(form.image.data.filename)
+            upload_path = os.path.join(current_app.root_path, 'static', 'uploads', filename)
+            form.image.data.save(upload_path)
+            new_item.image_filename = filename  # Save the filename in DB column
+
+        db.session.add(new_item)
+        db.session.commit()
+
+        # If authentication is requested its recorded
+        if authentication_requested:
+            auth_request = AuthenticationRequest(
+                item_id=new_item.id,
+                status=AuthenticationStatus.PENDING.value
             )
-            db.session.add(new_item)
+            db.session.add(auth_request)
             db.session.commit()
-            authentication = AuthenticationRequest(
-                  item_id = new_item.id,
-                  requester_id = current_user.id
-            )
-            db.session.add(authentication)
-            db.session.commit()
-        else:
-            new_item = models.Item(
-                name=form.name.data,
-                description=form.description.data,
-                category_id=form.category.data, 
-                minimum_price=form.minimum_price.data,
-                current_price=form.minimum_price.data,
-                seller_id=current_user.id,
-                start_time=datetime.utcnow(),
-                end_time=auction_end_time,
-                status=models.ItemStatus.ACTIVE.value
-            )
-            db.session.add(new_item)
-            db.session.commit()
-        flash('Item listed successfully!', 'success')
+
+        flash("Item listed successfully!", "success")
         return redirect(url_for('views.home'))
 
     return render_template('list_items.html', form=form)

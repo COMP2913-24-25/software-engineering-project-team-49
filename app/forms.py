@@ -34,6 +34,7 @@ class AuctionItemForm(FlaskForm):
     minimum_price = DecimalField('Minimum Price (£)', validators=[DataRequired(), NumberRange(min=0)])
     duration = SelectField('Auction Duration', choices=[('1', '1 Day'), ('2', '2 Days'), ('3', '3 Days'), ('4', '4 Days'), ('5', '5 Days')])
     authentication = SelectField('Atheticate Item (5 percent fee if authenticated)', choices=[('1', 'Yes'), ('2', 'No')])
+    image = FileField('Item Image', validators=[FileAllowed(['jpg','jpeg','png','gif'], 'Only image files are allowed!')])
     submit = SubmitField('List Item')
 
     def __init__(self, *args, **kwargs):
