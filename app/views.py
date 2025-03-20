@@ -351,6 +351,16 @@ def configure_fees():
         form.expert_fee.data = 5
     return render_template('configure_fees.html', form=form)
 
+@views.route('/weekly_costs', methods=['GET'])
+@login_required
+def weekly_costs():
+    one_week_ago = datetime.utcnow() - timedelta(days=7)
+    payments = Payment.query.filter(Payment.status=='completed', Payment.completed_at >= one_week_ago).all()
+    total_revenue = sum(payment.amount for payment in payments)
+    total_fees = sum(payment.fee_amount for payment in payments)
+    percentage_earnings = (total_fees / total_revenue * 100) if total_revenue else 0
+    return render_template('weekly_costs.html', payments=payments, total_revenue=total_revenue, total_fees=total_fees, percentage_earnings=percentage_earnings)
+
 @views.route('/basket', methods=['GET', 'POST'])
 @login_required
 def basket():
@@ -386,10 +396,16 @@ def process_payment(item_id):
     if highest_bid and highest_bid.user_id == current_user.id:
         # Get fee percentage from system configuration
         config = SystemConfiguration.query.filter_by(key='regular_fee_percentage').first()
-        fee_percentage = float(config.value)
+        if config is not None:
+            fee_percentage = float(config.value)
+        else:
+            fee_percentage = 0.01
         if item.is_authenticated:
             config = SystemConfiguration.query.filter_by(key="authenticated_fee_percentage").first()
-            fee_percentage = float(config.value)
+            if config is not None:
+                fee_percentage = float(config.value)
+            else:
+                fee_percentage = 0.05
             
         fee_amount = highest_bid.amount * fee_percentage
         
