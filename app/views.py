@@ -8,7 +8,7 @@ from flask_login import login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm, PaymentForm, ConfigFeeForm
-from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus, Payment
+from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus, Payment, SystemConfiguration
 
 
 @views.route('/')
@@ -324,9 +324,31 @@ def assign_expert(item_id):
         return redirect(url_for('views.manager'))
     return render_template('assign_expert.html', form=form, item=item)
 
-@views.route('/configure_fees/<int:item_id>', methods=['GET', 'POST'])
-def configure_fees(item_id):
+@views.route('/configure_fees', methods=['GET', 'POST'])
+def configure_fees():
     form = ConfigFeeForm()
+    if form.validate_on_submit():
+        default_fee = form.default_fee.data / 100
+        expert_fee = form.expert_fee.data / 100
+        for key, value in [('regular_fee_percentage', default_fee), ('authenticated_fee_percentage', expert_fee)]:
+            config = SystemConfiguration.query.filter_by(key=key).first()
+            if config:
+                config.value = str(value)
+            else:
+                db.session.add(SystemConfiguration(key=key, value=str(value)))
+        db.session.commit()
+        flash("Fee percentages updated successfully", "success")
+        return redirect(url_for('views.manager'))
+    config = SystemConfiguration.query.filter_by(key='regular_fee_percentage').first()
+    if config is not None:
+        form.default_fee.data = float(config.value) * 100
+    else:
+        form.default_fee.data = 1
+    config = SystemConfiguration.query.filter_by(key='authenticated_fee_percentage').first()
+    if config is not None:
+        form.expert_fee.data = float(config.value) * 100
+    else:
+        form.expert_fee.data = 5
     return render_template('configure_fees.html', form=form)
 
 @views.route('/basket', methods=['GET', 'POST'])
@@ -363,9 +385,11 @@ def process_payment(item_id):
     
     if highest_bid and highest_bid.user_id == current_user.id:
         # Get fee percentage from system configuration
-        fee_percentage = 0.01  # Default 1%
+        config = SystemConfiguration.query.filter_by(key='regular_fee_percentage').first()
+        fee_percentage = float(config.value)
         if item.is_authenticated:
-            fee_percentage = 0.05  # 5% for authenticated items
+            config = SystemConfiguration.query.filter_by(key="authenticated_fee_percentage").first()
+            fee_percentage = float(config.value)
             
         fee_amount = highest_bid.amount * fee_percentage
         

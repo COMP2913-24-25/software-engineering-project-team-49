@@ -3,6 +3,9 @@
 <div class="container mt-5">
     <h1>Welcome to the Manager Page</h1>
     <h2>Pending Items</h2>
+    <div>
+        <a href="{{ url_for('views.configure_fees') }}" class="btn btn-info">Configure percentage costs</a>
+    </div>
     {% if items %}
         <table class="table table-striped">
             <thead>
@@ -28,9 +31,6 @@
                     <td>{{ item.end_time.strftime('%Y-%m-%d %H:%M') }}</td>
                     <td>
                         <a href="{{ url_for('views.assign_expert', item_id=item.id) }}" class="btn btn-info">Assign Expert</a>
-                    </td>
-                    <td>
-                        <a href="{{ url_for('views.configure_fees', item_id=item.id) }}" class="btn btn-info">Configure percentage costs</a>
                     </td>
                 </tr>
                 {% endfor %}

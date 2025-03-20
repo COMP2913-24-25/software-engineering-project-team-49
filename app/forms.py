@@ -100,6 +100,6 @@ class PaymentForm(FlaskForm):
     submit = SubmitField('Pay Now')
 
 class ConfigFeeForm(FlaskForm):
-    default_fee = DecimalField('Default fee percentage is 1%', validators=[DataRequired()], places=2)
-    expert_fee = DecimalField('Expert Approved fee percenatge is 5%', validators=[DataRequired()], places=2)
+    default_fee = DecimalField('Default fee percentage is 1%', validators=[DataRequired(), NumberRange(min=0, max=100)], places=2)
+    expert_fee = DecimalField('Expert Approved fee percenatge is 5%', validators=[DataRequired(), NumberRange(min=0, max=100)], places=2)
     submit = SubmitField('Submit')
