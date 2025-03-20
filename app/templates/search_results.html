@@ -1,26 +1,28 @@
-{% extends "base.html" %}
-{% block page_content %}
+{% extends "bootstrap/base.html" %}
+
+{% block title %}Search Results{% endblock %}
+
+{% block content %}
 <div class="container mt-5">
     <h2>Search Results for "{{ query }}"</h2>
-    
-    {% if items %}
     <div class="row">
         {% for item in items %}
         <div class="col-md-4">
             <div class="card mb-4 shadow-sm">
-                <div class="card-body">
+                {% if item.images|length > 0 %}
+                    <img src="{{ url_for('static', filename=item.images[0].image_path.split('static/')[-1]) }}" class="card-img-top" alt="Item Image">
+                {% else %}
+                    <img src="{{ url_for('static', filename='default-image.jpg') }}" class="card-img-top" alt="No Image">
+                {% endif %}
+                <div class="card-body text-center">
                     <h5 class="card-title">{{ item.name }}</h5>
-                    <p class="card-text">{{ item.description[:100] }}...</p>
-                    <p class="card-text"><strong>Current Price:</strong> £{{ item.current_price }}</p>
-                    <p class="card-text"><strong>Time Left:</strong> {{ item.time_left() }}</p>
+                    <p><strong>Current Price:</strong> £{{ item.current_price }}</p>
+                    <p><strong>Ends In:</strong> {{ item.time_left() }}</p>
                     <a href="{{ url_for('views.auction_detail', item_id=item.id) }}" class="btn btn-primary">View Auction</a>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
-    {% else %}
-    <p>No auction items found for your search.</p>
-    {% endif %}
 </div>
 {% endblock %}

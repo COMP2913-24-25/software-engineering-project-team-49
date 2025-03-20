@@ -13,6 +13,9 @@ class DevelopmentConfig(Config):
     #SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "sqlite:///app.db")
     SQLALCHEMY_TRACK_MODIFICATIONS = True
 
+    #Upload folder for images
+    UPLOAD_FOLDER = os.path.join(basedir, 'static/uploads')
+
 class ProductionConfig(Config):
     database_url = os.environ.get('DATABASE_URL', '')
     if database_url.startswith('postgres://'):
@@ -20,6 +23,8 @@ class ProductionConfig(Config):
     
     SQLALCHEMY_DATABASE_URI = database_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static/uploads')
 
 config_dict = {
     'development': DevelopmentConfig,

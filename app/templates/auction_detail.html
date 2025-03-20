@@ -1,27 +1,61 @@
-{% extends "base.html" %}
-{% block page_content %}
-<div class="container mt-5">
-    <h2>{{ item.name }}</h2>
-    <p><strong>Description:</strong> {{ item.description }}</p>
-    <p><strong>Current Price:</strong> £{{ item.current_price }}</p>
-    <p><strong>Time Left:</strong> {{ item.time_left() }}</p>
-    <p><strong>Minimum Bid:</strong> £{{ item.current_price * 1.1 }}</p>
+{% extends "bootstrap/base.html" %}
 
-    {% if item.is_active() %}
-        {% if current_user.is_authenticated %}
-        <form method="POST">
-            {{ form.hidden_tag() }}
-            <div class="form-group">
-                {{ form.bid_amount.label }}
-                {{ form.bid_amount(class="form-control") }}
-            </div>
-            <button type="submit" class="btn btn-success">Place Bid</button>
-        </form>
-        {% else %}
-        <p><a href="{{ url_for('views.login') }}">Log in</a> to place a bid.</p>
-        {% endif %}
-    {% else %}
-        <p class="text-danger"><strong>This auction has ended.</strong></p>
-    {% endif %}
+{% block title %}Auction Details{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-6">
+            {% if item.images|length > 0 %}
+                <img src="{{ url_for('static', filename=item.images[0].image_path.split('static/')[-1]) }}" class="img-fluid rounded" alt="Item Image">
+            {% else %}
+                <img src="{{ url_for('static', filename='default-image.jpg') }}" class="img-fluid rounded" alt="No Image">
+            {% endif %}
+        </div>
+        
+        <div class="col-md-6">
+            <h2>{{ item.name }}</h2>
+            <p><strong>Description:</strong> {{ item.description }}</p>
+            <p><strong>Category:</strong> {{ item.category.name }}</p>
+            <p><strong>Seller:</strong> {{ item.seller.username }}</p>
+
+            {% if item.is_authenticated %}
+                <span class="badge bg-success">Authenticated</span>
+            {% else %}
+                <span class="badge bg-warning">Not Authenticated</span>
+            {% endif %}
+            
+            <p><strong>Current Price:</strong> £{{ item.current_price }}</p>
+            <p><strong>Minimum Bid:</strong> £{{ item.current_price + 1 }}</p>
+            <p><strong>Time Left:</strong> {{ item.time_left() }}</p>
+
+            {% if item.time_left() == "00:00:00" or not item.is_active() %}
+                <div class="alert alert-danger mt-3">
+                    <strong>This auction has ended.</strong>
+                </div>
+
+                {% if item.winner_id %}
+                    <p><strong>Winning Bidder:</strong> {{ item.winner.username }}</p>
+                {% else %}
+                    <p><strong>No winning bidder.</strong></p>
+                {% endif %}
+            
+            {% else %}
+                {% if current_user.is_authenticated %}
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="form-group">
+                        {{ form.bid_amount.label }}
+                        {{ form.bid_amount(class="form-control", min=item.current_price + 1, required=True) }}
+                        <small class="form-text text-muted">Your bid must be at least £{{ item.current_price + 1 }}</small>
+                    </div>
+                    <button type="submit" class="btn btn-success mt-3">Place Bid</button>
+                </form>
+                {% else %}
+                <p><a href="{{ url_for('views.login') }}">Log in</a> to place a bid.</p>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
 </div>
 {% endblock %}
