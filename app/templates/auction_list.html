@@ -1,35 +1,42 @@
 {% extends "base.html" %}
-{% block page_content %}
-<div class="container">
-  <h2 class="mt-4">Active Auctions</h2>
-  <!-- Search Bar -->
-  <form action="{{ url_for('views.search') }}" method="GET" class="form-inline my-3">
-    <input class="form-control mr-sm-2" type="search" placeholder="Search auctions..." name="query" required>
-    <button class="btn btn-outline-success my-sm-0" type="submit">Search</button>
-  </form>
-  {% if items %}
-    <div class="row">
-      {% for item in items %}
-        <div class="col-md-4">
-          <div class="card mb-4 shadow-sm">
-            {% if item.images %}
-              {% for img in item.images %}
-                <img class="card-img-top" src="{{ url_for('static', filename='uploads/' ~ img.image_filename) }}" alt="{{ item.name }}" style="height: 200px; object-fit: cover;">
-              {% endfor %}
-            {% endif %}
-            <div class="card-body">
-              <h5 class="card-title">{{ item.name }}</h5>
-              <p class="card-text">{{ item.description[:100] }}...</p>
-              <p class="card-text"><strong>Current Price:</strong> £{{ item.current_price }}</p>
-              <p class="card-text"><strong>Time Left:</strong> {{ item.time_left() }}</p>
-              <a href="{{ url_for('views.auction_detail', item_id=item.id) }}" class="btn btn-primary">View Auction</a>
-            </div>
-          </div>
+{% block content %}
+
+<div class="container mt-5">
+    <h2>Active Auctions</h2>
+
+    <!-- ✅ Added search bar for filtering auctions -->
+    <form class="mb-4" method="GET" action="{{ url_for('views.search') }}">
+        <div class="input-group">
+            <input type="text" class="form-control" name="query" placeholder="Search auctions..." required>
+            <button class="btn btn-primary" type="submit">Search</button>
         </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <p>No active auctions available.</p>
-  {% endif %}
+    </form>
+
+    {% if items %}
+        <div class="row">
+            {% for item in items %}
+                <div class="col-md-4">
+                    <div class="card mb-4 shadow-sm">
+                        <!-- Ensures images display correctly -->
+                        {% if item.images %}
+                            <img src="{{ url_for('static', filename=item.images[0].image_path) }}" class="card-img-top" alt="Auction Image">
+                        {% else %}
+                            <img src="{{ url_for('static', filename='images/placeholder.png') }}" class="card-img-top" alt="No Image Available">
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ item.name }}</h5>
+                            <p class="card-text">{{ item.description[:100] }}...</p>
+                            <p class="card-text"><strong>Current Price:</strong> £{{ item.current_price }}</p>
+                            <p class="card-text"><strong>Time Left:</strong> {{ item.time_left() }}</p>
+                            <a href="{{ url_for('views.auction_detail', item_id=item.id) }}" class="btn btn-primary">View Auction</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-danger">No active auctions at the moment.</p>
+    {% endif %}
 </div>
+
 {% endblock %}
