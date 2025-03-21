@@ -141,7 +141,7 @@ class Item(db.Model):
     
     # Relationships
     bids = db.relationship('Bid', backref='item', lazy='dynamic', cascade="all, delete-orphan")
-    images = db.relationship('ItemImage', backref='item', lazy=True)
+    images = db.relationship('ItemImage', backref='item', lazy=True, cascade="all, delete-orphan")
     authentication_request = db.relationship('AuthenticationRequest', backref='item', uselist=False, cascade="all, delete-orphan")
     notifications = db.relationship('Notification', lazy='dynamic', cascade="all, delete-orphan")
     

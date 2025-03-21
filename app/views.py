@@ -66,7 +66,7 @@ def login():
                 return redirect(url_for('views.home'))
         else:
             flash("Invalid Username or Password. Please try again.", 'danger')
-    return render_template('login.html', form=form, active_page='login')
+    return render_template('login.html', form=form)
 
 @views.route('/logout', methods=['GET','POST'])
 @login_required
@@ -145,7 +145,7 @@ def list_item():
 def auction_list():
     """ Display only active auctions"""
     items = Item.query.filter(Item.status == ItemStatus.ACTIVE.value).all()
-    return render_template('auction_list.html', items=items, active_page='auctions')
+    return render_template('auction_list.html', items=items)
 
 @views.route('/search', methods=['GET'])
 def search():
@@ -161,7 +161,7 @@ def search():
         Item.status == ItemStatus.ACTIVE.value  # Only search in active auctions
     ).all()
     
-    return render_template('search_results.html', items=items, query=query, active_page='search')
+    return render_template('search_results.html', items=items, query=query)
 
 @views.route('/auction_detail/<int:item_id>', methods=['GET', 'POST'])
 def auction_detail(item_id):
@@ -214,7 +214,7 @@ def auction_detail(item_id):
 @login_required
 def notifications():
      notifications = Notification.query.filter(Notification.user_id==current_user.id)
-     return render_template('notifications.html', notifications=notifications, active_page='notifications')
+     return render_template('notifications.html', notifications=notifications)
 
 @views.route('/expert', methods=['GET', 'POST'])
 @login_required
