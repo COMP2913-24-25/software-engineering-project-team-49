@@ -14,10 +14,12 @@ class SignUpForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6, message="Password should be minimum 6 characters.")])
     confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password', message="Passwords should match.")])
     submit = SubmitField('Sign Up')
+
     def validate_username(self, username):
         user = User.query.filter_by(username=username.data).first()
         if user:
             raise ValidationError("Username already taken.")
+
     def validate_email(self, email):
         user = User.query.filter_by(email=email.data).first()
         if user:
@@ -91,6 +93,7 @@ class AssignExpertForm(FlaskForm):
 class AuthenticateForm(FlaskForm):
     approve = SubmitField("Approve Authenticity")
     reject = SubmitField("Reject Authenticity")
+    reject_reason = TextAreaField("Reason for Rejection")
 
 class PaymentForm(FlaskForm):
     card_number = StringField('Card Number', validators=[DataRequired(), Length(min=16, max=16)])
