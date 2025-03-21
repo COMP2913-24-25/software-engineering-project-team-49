@@ -1,0 +1,22 @@
+/* Active navigation link styling */
+.nav-link.active {
+    color: #f0ad4e !important;
+    font-weight: bold;
+  }
+  
+  /* Improve form element spacing */
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Footer styling */
+  footer {
+    font-size: 0.9rem;
+  }
+  
+  /* Button hover effects */
+  .btn:hover {
+    opacity: 0.85;
+    transition: opacity 0.3s ease;
+  }
+  

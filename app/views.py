@@ -198,7 +198,7 @@ def auction_detail(item_id):
                 db.session.add(notification)
                 db.session.commit()
 
-            flash("Your bid has been placed successfully!", "success")
+            flash("Bid placed successfully", "success")
             return redirect(url_for('views.auction_detail', item_id=item.id))
 
     return render_template('auction_detail.html', item=item, form=form)
