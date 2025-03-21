@@ -8,8 +8,13 @@ from flask_login import login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm, PaymentForm
-from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus, Payment
+from .models import User, Item, ItemStatus,ItemImage, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus, Payment
 
+UPLOAD_FOLDER = 'static/uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @views.route('/')
 @views.route('/welcome')
@@ -39,7 +44,7 @@ def signup():
         db.session.commit()
         flash("Account successfully created", "success")
         return redirect(url_for('views.login'))
-    return render_template('signup.html', form=form)
+    return render_template('signup.html', form=form, signup='signup')
 
 @views.route('/login', methods=['GET', 'POST'])
 def login():
@@ -61,7 +66,7 @@ def login():
                 return redirect(url_for('views.home'))
         else:
             flash("Invalid Username or Password. Please try again.", 'danger')
-    return render_template('login.html', form=form)
+    return render_template('login.html', form=form, active_page='login')
 
 @views.route('/logout', methods=['GET','POST'])
 @login_required
@@ -92,45 +97,46 @@ def list_item():
     form = AuctionItemForm()
 
     if form.validate_on_submit():
-        # Determine if user wants item authentication
-        authentication_requested = (form.authentication.data == '1')
+        auction_end_time = datetime.utcnow() + timedelta(days=int(form.duration.data))
 
-        # Calculate end_time for the auction
-        duration_days = int(form.duration.data)
-        end_time = datetime.utcnow() + timedelta(days=duration_days)
-
-        # Create the new item
+        # Create the auction item
         new_item = Item(
             name=form.name.data,
             description=form.description.data,
-            seller_id=current_user.id,
             category_id=form.category.data,
             minimum_price=form.minimum_price.data,
             current_price=form.minimum_price.data,
-            end_time=end_time,
-            status=ItemStatus.PENDING.value if authentication_requested else ItemStatus.ACTIVE.value,
+            seller_id=current_user.id,
+            start_time=datetime.utcnow(),
+            end_time=auction_end_time,
+            status=ItemStatus.PENDING.value if form.authentication.data == '1' else ItemStatus.ACTIVE.value
         )
-
-        # Handle the image file if present
-        if form.image.data:
-            filename = secure_filename(form.image.data.filename)
-            upload_path = os.path.join(current_app.root_path, 'static', 'uploads', filename)
-            form.image.data.save(upload_path)
-            new_item.image_filename = filename  # Save the filename in DB column
 
         db.session.add(new_item)
         db.session.commit()
 
-        # If authentication is requested its recorded
-        if authentication_requested:
-            auth_request = AuthenticationRequest(
-                item_id=new_item.id,
-                status=AuthenticationStatus.PENDING.value
-            )
-            db.session.add(auth_request)
+        # Handle Image Uploads
+        if 'images' in request.files:
+            files = request.files.getlist('images')  # Get list of uploaded images
+            for file in files:
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    file_path = os.path.join(UPLOAD_FOLDER, filename)
+                    file.save(file_path)  # Save image
+
+                    # Create ItemImage entry for the database
+                    item_image = ItemImage(item_id=new_item.id, image_path=file_path)
+                    db.session.add(item_image)
+
+        db.session.commit() 
+
+        # Handle authentication request
+        if form.authentication.data == '1':
+            authentication = AuthenticationRequest(item_id=new_item.id, requester_id=current_user.id)
+            db.session.add(authentication)
             db.session.commit()
 
-        flash("Item listed successfully!", "success")
+        flash('Item listed successfully!', 'success')
         return redirect(url_for('views.home'))
 
     return render_template('list_items.html', form=form)
@@ -139,7 +145,7 @@ def list_item():
 def auction_list():
     """ Display only active auctions"""
     items = Item.query.filter(Item.status == ItemStatus.ACTIVE.value).all()
-    return render_template('auction_list.html', items=items)
+    return render_template('auction_list.html', items=items, active_page='auctions')
 
 @views.route('/search', methods=['GET'])
 def search():
@@ -155,7 +161,7 @@ def search():
         Item.status == ItemStatus.ACTIVE.value  # Only search in active auctions
     ).all()
     
-    return render_template('search_results.html', items=items, query=query)
+    return render_template('search_results.html', items=items, query=query, active_page='search')
 
 @views.route('/auction_detail/<int:item_id>', methods=['GET', 'POST'])
 def auction_detail(item_id):
@@ -208,7 +214,7 @@ def auction_detail(item_id):
 @login_required
 def notifications():
      notifications = Notification.query.filter(Notification.user_id==current_user.id)
-     return render_template('notifications.html', notifications=notifications)
+     return render_template('notifications.html', notifications=notifications, active_page='notifications')
 
 @views.route('/expert', methods=['GET', 'POST'])
 @login_required

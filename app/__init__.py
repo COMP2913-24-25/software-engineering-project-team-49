@@ -65,7 +65,7 @@ def check_auctions(app):
         
 def create_app():
     import os
-    app = Flask(__name__, static_folder="app/static")
+    app = Flask(__name__,)
     #app.config.from_object('config')
 
     # Determine environment (default to 'development')

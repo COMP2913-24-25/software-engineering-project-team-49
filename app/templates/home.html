@@ -1,37 +1,35 @@
 {% extends "base.html" %}
-{% block page_content %}
-<div class="container mt-5 text-center">
-    <h1>Welcome to the Auction Platform</h1>
-    <p>Find and bid on unique items!</p>
+{% block content %}
+
+<div class="container text-center mt-5">
+    <div class="jumbotron bg-primary text-white p-4 rounded">
+        <h1>Welcome to Bid Horizon</h1>
+        <p>Find and bid on unique items!</p>
+    </div>
 
     <!-- Search Bar -->
-    <form action="{{ url_for('views.search') }}" method="GET" class="form-inline justify-content-center my-3">
-        <input class="form-control mr-sm-2" type="search" placeholder="Search auctions..." name="query" required>
-        <button class="btn btn-outline-success my-sm-0" type="submit">Search</button>
+    <form action="{{ url_for('views.search') }}" method="GET" class="my-4">
+        <input class="form-control w-50 mx-auto" type="search" placeholder="Search auctions..." name="query" required>
+        <button class="btn btn-primary mt-2">🔍 Search</button>
     </form>
 
-    <!-- Featured Auctions (Ending Soon) -->
-    <h2 class="mt-4">Featured Auctions (Ending Soon)</h2>
-    {% if featured_auctions %}
+    <!-- Featured Auctions -->
+    <h2 class="mt-4">🔥 Featured Auctions</h2>
     <div class="row">
         {% for item in featured_auctions %}
         <div class="col-md-4">
             <div class="card mb-4 shadow-sm">
-                <div class="card-body">
+                <img src="{{ url_for('static', filename=item.images[0].image_path) }}" class="card-img-top" alt="Auction Image">
+                <div class="card-body text-center">
                     <h5 class="card-title">{{ item.name }}</h5>
-                    <p class="card-text">{{ item.description[:100] }}...</p>
                     <p class="card-text"><strong>Current Price:</strong> £{{ item.current_price }}</p>
                     <p class="card-text"><strong>Ends In:</strong> {{ item.time_left() }}</p>
-                    <a href="{{ url_for('views.auction_detail', item_id=item.id) }}" class="btn btn-primary">
-                        View Auction
-                    </a>
+                    <a href="{{ url_for('views.auction_detail', item_id=item.id) }}" class="btn btn-primary">View Auction</a>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
-    {% else %}
-    <p>No auctions ending soon. Check back later!</p>
-    {% endif %}
 </div>
+
 {% endblock %}

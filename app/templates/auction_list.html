@@ -2,23 +2,20 @@
 {% block page_content %}
 <div class="container">
   <h2 class="mt-4">Active Auctions</h2>
-
   <!-- Search Bar -->
   <form action="{{ url_for('views.search') }}" method="GET" class="form-inline my-3">
     <input class="form-control mr-sm-2" type="search" placeholder="Search auctions..." name="query" required>
     <button class="btn btn-outline-success my-sm-0" type="submit">Search</button>
   </form>
-
   {% if items %}
     <div class="row">
       {% for item in items %}
         <div class="col-md-4">
           <div class="card mb-4 shadow-sm">
-            {% if item.image_filename %}
-              <img class="card-img-top"
-                   src="{{ url_for('static', filename='uploads/' ~ item.image_filename) }}"
-                   alt="{{ item.name }}"
-                   style="height: 200px; object-fit: cover;">
+            {% if item.images %}
+              {% for img in item.images %}
+                <img class="card-img-top" src="{{ url_for('static', filename='uploads/' ~ img.image_filename) }}" alt="{{ item.name }}" style="height: 200px; object-fit: cover;">
+              {% endfor %}
             {% endif %}
             <div class="card-body">
               <h5 class="card-title">{{ item.name }}</h5>

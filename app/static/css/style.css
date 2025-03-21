@@ -1,22 +1,22 @@
-/* Active navigation link styling */
-.nav-link.active {
-    color: #f0ad4e !important;
-    font-weight: bold;
-  }
-  
-  /* Improve form element spacing */
-  .form-group {
-    margin-bottom: 1.5rem;
-  }
-  
-  /* Footer styling */
-  footer {
-    font-size: 0.9rem;
-  }
-  
-  /* Button hover effects */
-  .btn:hover {
-    opacity: 0.85;
-    transition: opacity 0.3s ease;
-  }
-  
+body {
+  background-color: #FAF3E0;
+  font-family: Arial, sans-serif;
+  color: #2B2D42;
+}
+.navbar {
+  background-color: #1D3557 !important;
+}
+.navbar-brand img {
+  height: 50px;
+}
+.card {
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.btn-primary {
+  background-color: #E2C044;
+  border: none;
+}
+.btn-primary:hover {
+  background-color: #F4D35E;
+}
