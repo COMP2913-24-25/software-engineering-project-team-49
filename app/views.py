@@ -185,6 +185,7 @@ def auction_detail(item_id):
             # Create the new bid
             new_bid = Bid(item_id=item.id, user_id=current_user.id, amount=form.bid_amount.data)
             db.session.add(new_bid)
+            item.current_price = form.bid_amount.data
             db.session.commit()
 
             # Notify the outbid user
