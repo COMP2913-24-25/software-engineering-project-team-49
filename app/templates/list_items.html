@@ -43,8 +43,8 @@
 
     <!-- Image Upload with Live Preview -->
     <div class="mb-3">
-      {{ form.images.label(class="form-label") }}
-      {{ form.images(class="form-control", id="imageUpload", multiple=True) }}
+      {{ form.image.label(class="form-label") }}
+      {{ form.image(class="form-control", id="imageUpload", multiple=True) }}
       <small class="form-text text-muted">Upload one or more images (JPG, PNG, GIF).</small>
       <div id="imagePreview" class="mt-3 d-flex flex-wrap"></div>
     </div>
