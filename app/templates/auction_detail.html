@@ -3,14 +3,15 @@
 
 <div class="container mt-4">
     <div class="row">
+        <!-- Image Carousel -->
         <div class="col-md-6">
-            <!-- Image Carousel -->
+            {% if item.images %}
             <div id="carouselImages" class="carousel slide" data-bs-ride="carousel">
                 <div class="carousel-inner">
                     {% for image in item.images %}
-                        <div class="carousel-item {% if loop.first %} active {% endif %}">
-                            <img src="{{ url_for('static', filename=image.image_path.split('static/')[-1]) }}" class="d-block w-100">
-                        </div>
+                    <div class="carousel-item {% if loop.first %}active{% endif %}">
+                        <img src="{{ url_for('static', filename=image.image_path.split('static/')[-1]) }}" class="d-block w-100" alt="Auction Image">
+                    </div>
                     {% endfor %}
                 </div>
                 <button class="carousel-control-prev" type="button" data-bs-target="#carouselImages" data-bs-slide="prev">
@@ -20,37 +21,60 @@
                     <span class="carousel-control-next-icon"></span>
                 </button>
             </div>
+            {% else %}
+            <img src="{{ url_for('static', filename='images/placeholder.png') }}" class="img-fluid" alt="No image available">
+            {% endif %}
         </div>
 
+        <!-- Auction Details -->
         <div class="col-md-6">
             <h2>{{ item.name }}</h2>
             <p><strong>Category:</strong> {{ item.category_rel.name }}</p>
+      
+            {% if item.is_authenticated %}
+            <span class="badge bg-success mb-2">Authenticated</span>
+            {% endif %}
+      
             <p><strong>Description:</strong> {{ item.description }}</p>
             <p><strong>Current Price:</strong> £{{ item.current_price }}</p>
-            <p><strong>Ends In:</strong> {{ item.time_left() }}</p>
-            
-            {% if item.is_authenticated %}
-                <p class="text-success"><strong>✅ This item has been authenticated</strong></p>
-            {% endif %}
-
+            <p><strong>Ends In:</strong> <span class="text-danger fw-bold">{{ item.time_left() }}</span></p>
+      
             {% if current_user.is_authenticated %}
-                {% if item.seller_id != current_user.id %}
-                    <form method="POST">
-                        {{ form.hidden_tag() }}
-                        <div class="form-group">
-                            {{ form.bid_amount.label }}
-                            {{ form.bid_amount(class="form-control") }}
-                        </div>
-                        <button type="submit" class="btn btn-primary mt-2">Place Bid</button>
-                    </form>
+              {% if item.seller_id != current_user.id %}
+                <!-- Watch/Unwatch button -->
+                {% if item in current_user.watched_items %}
+                  <form action="{{ url_for('views.unwatch_item', item_id=item.id) }}" method="POST" class="mb-3">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">💔 Unwatch Auction</button>
+                  </form>
                 {% else %}
-                    <p class="text-muted">You cannot bid on your own item.</p>
+                  <form action="{{ url_for('views.watch_item', item_id=item.id) }}" method="POST" class="mb-3">
+                    <button type="submit" class="btn btn-outline-primary btn-sm">⭐ Watch Auction</button>
+                  </form>
                 {% endif %}
+      
+                <!-- Bidding form -->
+                <h5 class="mt-4">Place Your Bid</h5>
+                <form method="POST">
+                  {{ form.hidden_tag() }}
+                  <div class="form-group">
+                    {{ form.bid_amount.label }}
+                    {{ form.bid_amount(class="form-control", placeholder="Enter at least 10% more than current price") }}
+                    {% if form.bid_amount.errors %}
+                    <small class="text-danger">{{ form.bid_amount.errors[0] }}</small>
+                    {% endif %}
+                  </div>
+                  <button type="submit" class="btn btn-primary mt-2">Place Bid</button>
+                </form>
+              {% else %}
+                <p class="text-muted">You cannot bid on your own item.</p>
+              {% endif %}
             {% else %}
-                <p><a href="{{ url_for('views.login') }}" class="btn btn-warning">Log in to place a bid</a></p>
+              <p><a href="{{ url_for('views.login') }}" class="btn btn-warning">Log in to place a bid</a></p>
             {% endif %}
+      
+            <a href="{{ url_for('views.auction_list') }}" class="btn btn-outline-secondary mt-3">← Back to Auctions</a>
+          </div>
         </div>
-    </div>
-</div>
-
-{% endblock %}
+      </div>
+      
+      {% endblock %}

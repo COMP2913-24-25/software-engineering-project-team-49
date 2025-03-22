@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileField, FileAllowed
+from flask_wtf.file import MultipleFileField, FileAllowed
 from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAreaField, DecimalField, TimeField, BooleanField
 from wtforms_sqlalchemy.fields import QuerySelectMultipleField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange
@@ -37,7 +37,7 @@ class AuctionItemForm(FlaskForm):
     minimum_price = DecimalField('Minimum Price (£)', validators=[DataRequired(), NumberRange(min=0)])
     duration = SelectField('Auction Duration', choices=[('1', '1 Day'), ('2', '2 Days'), ('3', '3 Days'), ('4', '4 Days'), ('5', '5 Days')])
     authentication = SelectField('Autheticate Item (5 percent fee if authenticated)', choices=[('1', 'Yes'), ('2', 'No')])
-    image = FileField('Item Image', validators=[FileAllowed(['jpg','jpeg','png','gif'], 'Only image files are allowed!')])
+    image = MultipleFileField('Item Image', validators=[FileAllowed(['jpg','jpeg','png','gif'], 'Only image files are allowed!')])
     submit = SubmitField('List Item')
 
     def __init__(self, *args, **kwargs):

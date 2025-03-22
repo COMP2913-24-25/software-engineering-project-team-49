@@ -360,6 +360,13 @@ def basket():
     paying_items = Item.query.filter(Item.status == ItemStatus.PAYING.value, Item.winner_id == current_user.id).all()
     return render_template('basket.html', paying_items = paying_items)
 
+@views.route('/my_watched')
+@login_required
+def my_watched():
+    watched_items = current_user.watched_items.filter(Item.status == ItemStatus.ACTIVE.value).all()
+    return render_template('my_watched.html', items=watched_items, active_page='my_watched')
+
+
 @views.route('/payment_interface/<int:item_id>', methods=['GET', 'POST'])
 @login_required
 def payment_interface(item_id):
@@ -433,3 +440,18 @@ def process_payment(item_id):
     else:
         flash("You are not authorized to make this payment.", "danger")
         return redirect(url_for('views.basket'))
+
+@views.route('/toggle_watch/<int:item_id>', methods=['POST'])
+@login_required
+def toggle_watch(item_id):
+    item = Item.query.get_or_404(item_id)
+
+    if current_user in item.watchers:
+        item.watchers.remove(current_user)
+        flash(f"Removed '{item.name}' from your watchlist.", "info")
+    else:
+        item.watchers.append(current_user)
+        flash(f"Added '{item.name}' to your watchlist!", "success")
+
+    db.session.commit()
+    return redirect(request.form.get("next") or url_for('views.auction_detail', item_id=item_id))
