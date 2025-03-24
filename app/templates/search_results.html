@@ -1,16 +1,23 @@
 {% extends "base.html" %}
-{% block page_content %}
+{% block content %}
+
 <div class="container mt-5">
     <h2>Search Results for "{{ query }}"</h2>
-    
+
     {% if items %}
     <div class="row">
         {% for item in items %}
-        <div class="col-md-4">
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <!--Fix: Prevent crash if no images exist -->
+                {% if item.images %}
+                    <img src="{{ url_for('static', filename=item.images[0].image_path) }}" class="card-img-top" alt="Auction Image">
+                {% else %}
+                    <img src="{{ url_for('static', filename='images/placeholder.png') }}" class="card-img-top" alt="No Image Available">
+                {% endif %}
+                <div class="card-body d-flex flex-column">
                     <h5 class="card-title">{{ item.name }}</h5>
-                    <p class="card-text">{{ item.description[:100] }}...</p>
+                    <p class="card-text">{{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}</p>
                     <p class="card-text"><strong>Current Price:</strong> £{{ item.current_price }}</p>
                     <p class="card-text"><strong>Time Left:</strong> {{ item.time_left() }}</p>
                     <a href="{{ url_for('views.auction_detail', item_id=item.id) }}" class="btn btn-primary">View Auction</a>
@@ -20,7 +27,8 @@
         {% endfor %}
     </div>
     {% else %}
-    <p>No auction items found for your search.</p>
+    <p class="text-danger"><strong>No auction items found for your search.</strong></p>
     {% endif %}
 </div>
+
 {% endblock %}

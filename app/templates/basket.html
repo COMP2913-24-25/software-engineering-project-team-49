@@ -1,21 +1,27 @@
 {% extends "base.html" %}
-{% block page_content %}
+{% block content %}
+
 <div class="container mt-5">
+    <h2>Your Basket</h2>
+
     {% if paying_items %}
-    {%for paying_item in paying_items%}
+    {% for paying_item in paying_items %}
     <div class="row">
-        <div class="card">
-            <div clas="card-body">
-                <h5 class="card-title">{{paying_item.name}}</h5>
-                <p class="card-text">{{paying_item.description}}</p>
-                <p class="card-text">{{paying_item.current_price}}</p>
-                <a href="{{ url_for('views.payment_interface', item_id=paying_item.id) }}" class="btn btn-primary">Pay for Item</a>
+        <div class="col-md-8 offset-md-2">
+            <div class="card mb-3 shadow">
+                <div class="card-body">
+                    <h5 class="card-title">{{ paying_item.name }}</h5>
+                    <p class="card-text">{{ paying_item.description }}</p>
+                    <p class="card-text"><strong>Price:</strong> £{{ paying_item.current_price }}</p>
+                    <a href="{{ url_for('views.payment_interface', item_id=paying_item.id) }}" class="btn btn-success">Pay Now</a>
+                </div>
             </div>
         </div>
     </div>
-    {%endfor%}
-    {%else%}
-    <p class="text-danger"><strong>You have not won any items.</strong></p>
-    {%endif%}
+    {% endfor %}
+    {% else %}
+    <p class="text-danger"><strong>You have not won any items yet.</strong></p>
+    {% endif %}
 </div>
+
 {% endblock %}

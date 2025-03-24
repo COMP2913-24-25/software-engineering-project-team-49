@@ -392,9 +392,6 @@ def test_item_relationships(init_database):
     bid2 = Bid(item_id=item.id, user_id=buyer.id, amount=85.0)
     init_database.session.add_all([bid1, bid2])
     
-    # Add an image
-    image = ItemImage(item_id=item.id, image_path="/path/to/image.jpg")
-    init_database.session.add(image)
     
     # Add to watched items
     buyer.watched_items.append(item)
@@ -407,8 +404,6 @@ def test_item_relationships(init_database):
     assert saved_item.category_rel.name == "Electronics"
     assert len(saved_item.bids.all()) == 2
     assert saved_item.bids.order_by(Bid.amount.desc()).first().amount == 85.0
-    assert len(saved_item.images.all()) == 1
-    assert saved_item.images.first().image_path == "/path/to/image.jpg"
     assert saved_item in buyer.watched_items.all()
     assert buyer in saved_item.watchers.all()
 

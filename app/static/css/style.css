@@ -1,0 +1,22 @@
+body {
+  background-color: #FAF3E0;
+  font-family: Arial, sans-serif;
+  color: #2B2D42;
+}
+.navbar {
+  background-color: #1D3557 !important;
+}
+.navbar-brand img {
+  height: 50px;
+}
+.card {
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.btn-primary {
+  background-color: #E2C044;
+  border: none;
+}
+.btn-primary:hover {
+  background-color: #F4D35E;
+}

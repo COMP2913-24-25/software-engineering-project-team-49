@@ -8,8 +8,15 @@ from flask_login import login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm, PaymentForm, ConfigFeeForm
-from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus, Payment, SystemConfiguration
+from .models import User, Item, ItemStatus,ItemImage, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus, Payment, SystemConfiguration
+import os
+from werkzeug.utils import secure_filename
 
+UPLOAD_FOLDER = 'app/static/uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @views.route('/')
 @views.route('/welcome')
@@ -20,6 +27,13 @@ def welcome():
 def signup():
     form = SignUpForm()
     if form.validate_on_submit():
+        existing_user = User.query.filter(
+            (User.username == form.username.data) | (User.email == form.email.data)
+        ).first()
+        if existing_user:
+            flash("Username or email already in use.", "danger")
+            return redirect(url_for('views.signup'))
+
         if form.type.data == '1':
             new_user = User(first_name=form.first_name.data, last_name=form.last_name.data, username=form.username.data, email=form.email.data)
             new_user.set_password(form.password.data)
@@ -65,6 +79,7 @@ def login():
 @login_required
 def logout():
     logout_user()
+    flash("You have been logged out.", "info")
     return redirect(url_for('views.welcome'))
 
 @views.route('/home')
@@ -90,40 +105,44 @@ def list_item():
 
     if form.validate_on_submit():
         auction_end_time = datetime.utcnow() + timedelta(days=int(form.duration.data))
+
+        # Create the auction item
+        new_item = Item(
+            name=form.name.data,
+            description=form.description.data,
+            category_id=form.category.data,
+            minimum_price=form.minimum_price.data,
+            current_price=form.minimum_price.data,
+            seller_id=current_user.id,
+            start_time=datetime.utcnow(),
+            end_time=auction_end_time,
+            status=ItemStatus.PENDING.value if form.authentication.data == '1' else ItemStatus.ACTIVE.value
+        )
+
+        db.session.add(new_item)
+        db.session.commit()
+
+        # Handle Image Uploads
+        if 'image' in request.files:
+            files = request.files.getlist('image')  # Get list of uploaded images
+            for file in files:
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    file_path = os.path.join(UPLOAD_FOLDER, filename)
+                    file.save(file_path)  # Save image
+
+                    # Create ItemImage entry for the database
+                    item_image = ItemImage(item_id=new_item.id, image_path=f'uploads/{filename}')
+                    db.session.add(item_image)
+
+        db.session.commit() 
+
+        # Handle authentication request
         if form.authentication.data == '1':
-            new_item = models.Item(
-                name=form.name.data,
-                description=form.description.data,
-                category_id=form.category.data, 
-                minimum_price=form.minimum_price.data,
-                current_price=form.minimum_price.data,
-                seller_id=current_user.id,
-                start_time=datetime.utcnow(),
-                end_time=auction_end_time,
-                status=models.ItemStatus.PENDING.value
-            )
-            db.session.add(new_item)
-            db.session.commit()
-            authentication = AuthenticationRequest(
-                  item_id = new_item.id,
-                  requester_id = current_user.id
-            )
+            authentication = AuthenticationRequest(item_id=new_item.id, requester_id=current_user.id)
             db.session.add(authentication)
             db.session.commit()
-        else:
-            new_item = models.Item(
-                name=form.name.data,
-                description=form.description.data,
-                category_id=form.category.data, 
-                minimum_price=form.minimum_price.data,
-                current_price=form.minimum_price.data,
-                seller_id=current_user.id,
-                start_time=datetime.utcnow(),
-                end_time=auction_end_time,
-                status=models.ItemStatus.ACTIVE.value
-            )
-            db.session.add(new_item)
-            db.session.commit()
+
         flash('Item listed successfully!', 'success')
         return redirect(url_for('views.home'))
 
@@ -157,32 +176,43 @@ def auction_detail(item_id):
     item = Item.query.get_or_404(item_id)
     form = BidItemForm(item_price=item.current_price)
 
-    if form.validate_on_submit():
-        # Process the bid (ensure it is valid)
-        new_bid_amount = form.bid_amount.data
-        if new_bid_amount < item.current_price * 1.1:
-            flash("Your bid must be at least 10% higher than the current price.", "danger")
-        else:
-            previous_bid = Bid.query.filter(Bid.item_id == item_id).order_by(Bid.amount.desc()).first()
-            
-            #update item price and new bid
-            item.current_price = new_bid_amount
-            new_bid = Bid(item_id=item_id, user_id = current_user.id, amount = new_bid_amount)
+    # Fetch the highest bid on item
+    highest_bid = Bid.query.filter_by(item_id=item.id).order_by(Bid.amount.desc()).first()
+
+    # If user is submitting a bid, confirm they are logged in
+    if request.method == 'POST':
+        if not current_user.is_authenticated:
+            flash("You must be logged in to place a bid.", "warning")
+            return redirect(url_for('views.login'))
+
+        if form.validate_on_submit():
+            # Prevent self-bidding
+            if item.seller_id == current_user.id:
+                flash("You cannot bid on your own item.", "danger")
+                return redirect(url_for('views.auction_detail', item_id=item.id))
+
+            # Ensure new bid is strictly greater than the last highest
+            if highest_bid and form.bid_amount.data <= highest_bid.amount:
+                flash(f"Your bid must be greater than £{highest_bid.amount:.2f}.", "danger")
+                return redirect(url_for('views.auction_detail', item_id=item.id))
+            # Create the new bid
+            new_bid = Bid(item_id=item.id, user_id=current_user.id, amount=form.bid_amount.data)
             db.session.add(new_bid)
+            item.current_price = form.bid_amount.data
             db.session.commit()
 
-            #make notification for previous bidder
-            if previous_bid and previous_bid.user_id != current_user.id:
+            # Notify the outbid user
+            if highest_bid and highest_bid.user_id != current_user.id:
                 notification = Notification(
-                    user_id=previous_bid.user_id,
+                    user_id=highest_bid.user_id,
                     item_id=item.id,
                     type="outbid",
-                    message=f"You have been outbid on '{item.name}'. The new bid is £{new_bid_amount:.2f}.",
+                    message=f"You have been outbid on '{item.name}'. Current highest bid: £{form.bid_amount.data:.2f}"
                 )
                 db.session.add(notification)
                 db.session.commit()
 
-            flash('Bid placed successfully!', 'success')
+            flash("Bid placed successfully", "success")
             return redirect(url_for('views.auction_detail', item_id=item.id))
 
     return render_template('auction_detail.html', item=item, form=form)
@@ -196,7 +226,14 @@ def notifications():
 @views.route('/expert', methods=['GET', 'POST'])
 @login_required
 def expert():
-    pending_items = Item.query.filter_by(status=ItemStatus.PENDING.value).all()
+    if current_user.priority != UserPriority.EXPERT.value:
+        flash("Access denied.", "danger")
+        return redirect(url_for('views.home'))
+
+    pending_items = AuthenticationRequest.query.join(Item).filter(
+        AuthenticationRequest.expert_id == current_user.id,
+        AuthenticationRequest.status == AuthenticationStatus.PENDING.value
+    ).all()
     return render_template('expert.html', items=pending_items)
 
 @views.route('/select_availability', methods=['GET', 'POST'])
@@ -367,6 +404,13 @@ def basket():
     paying_items = Item.query.filter(Item.status == ItemStatus.PAYING.value, Item.winner_id == current_user.id).all()
     return render_template('basket.html', paying_items = paying_items)
 
+@views.route('/my_watched')
+@login_required
+def my_watched():
+    watched_items = current_user.watched_items.filter(Item.status == ItemStatus.ACTIVE.value).all()
+    return render_template('my_watched.html', items=watched_items, active_page='my_watched')
+
+
 @views.route('/payment_interface/<int:item_id>', methods=['GET', 'POST'])
 @login_required
 def payment_interface(item_id):
@@ -448,3 +492,18 @@ def process_payment(item_id):
     else:
         flash("You are not authorized to make this payment.", "danger")
         return redirect(url_for('views.basket'))
+
+@views.route('/toggle_watch/<int:item_id>', methods=['POST'])
+@login_required
+def toggle_watch(item_id):
+    item = Item.query.get_or_404(item_id)
+
+    if current_user in item.watchers:
+        item.watchers.remove(current_user)
+        flash(f"Removed '{item.name}' from your watchlist.", "info")
+    else:
+        item.watchers.append(current_user)
+        flash(f"Added '{item.name}' to your watchlist!", "success")
+
+    db.session.commit()
+    return redirect(request.form.get("next") or url_for('views.auction_detail', item_id=item_id))

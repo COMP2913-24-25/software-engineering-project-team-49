@@ -1,15 +1,19 @@
-{% extends "base.html" %}
-{% block page_content %}
-<div class="container mt-5">
-    <h2>{{ item.name }}</h2>
-    <p><strong>Description:</strong> {{ item.description }}</p>
-    <p><strong>Current Price:</strong> £{{ item.current_price }}</p>
-    <p><strong>Time Left:</strong> {{ item.time_left() }}</p>
-    <p><strong>Minimum Bid:</strong> £{{ item.current_price * 1.1 }}</p>
-    <form method="POST" action="{{ url_for('views.authenticate_item', item_id=item.id) }}">
-        {{ form.hidden_tag() }}
-        <button type="submit" name="action" value="approve" class="btn btn-success">Approve Authenticity (Genuine)</button>
-        <button type="submit" name="action" value="reject" class="btn btn-danger">Reject Authenticity (Unknown)</button>
-    </form>
+{% extends \"base.html\" %}
+{% block content %}
+<div class=\"container mt-5\">
+  <h2>{{ item.name }}</h2>
+  {% if item.image_filename %}
+    <img src=\"{{ url_for('static', filename='uploads/' ~ item.image_filename) }}\" alt=\"{{ item.name }}\" class=\"img-fluid mb-3\">
+  {% endif %}
+  <p><strong>Description:</strong> {{ item.description }}</p>
+  <p><strong>Current Price:</strong> £{{ item.current_price }}</p>
+  <p><strong>Time Left:</strong> {{ item.time_left() }}</p>
+  <p><strong>Minimum Next Bid:</strong> £{{ item.current_price * 1.1 }}</p>
+
+  <form method=\"POST\" action=\"{{ url_for('views.authenticate_item', item_id=item.id) }}\">
+    {{ form.hidden_tag() }}
+    <button type=\"submit\" name=\"action\" value=\"approve\" class=\"btn btn-success\">Approve Authenticity (Genuine)</button>
+    <button type=\"submit\" name=\"action\" value=\"reject\" class=\"btn btn-danger\">Reject Authenticity (Unknown)</button>
+  </form>
 </div>
 {% endblock %}

@@ -1,4 +1,5 @@
 from flask_wtf import FlaskForm
+from flask_wtf.file import MultipleFileField, FileAllowed
 from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAreaField, DecimalField, TimeField, BooleanField
 from wtforms_sqlalchemy.fields import QuerySelectMultipleField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange
@@ -14,10 +15,12 @@ class SignUpForm(FlaskForm):
     confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password', message="Passwords should match.")])
     type = SelectField('Are you a user, expert or manager?', choices=[('1', 'User'), ('2', 'Expert'), ('3', 'Manager')])
     submit = SubmitField('Sign Up')
+
     def validate_username(self, username):
         user = User.query.filter_by(username=username.data).first()
         if user:
             raise ValidationError("Username already taken.")
+
     def validate_email(self, email):
         user = User.query.filter_by(email=email.data).first()
         if user:
@@ -34,7 +37,8 @@ class AuctionItemForm(FlaskForm):
     category = SelectField('Category', choices=[], validators=[DataRequired()])
     minimum_price = DecimalField('Minimum Price (£)', validators=[DataRequired(), NumberRange(min=0)])
     duration = SelectField('Auction Duration', choices=[('1', '1 Day'), ('2', '2 Days'), ('3', '3 Days'), ('4', '4 Days'), ('5', '5 Days')])
-    authentication = SelectField('Atheticate Item (5 percent fee if authenticated)', choices=[('1', 'Yes'), ('2', 'No')])
+    authentication = SelectField('Autheticate Item (5 percent fee if authenticated)', choices=[('1', 'Yes'), ('2', 'No')])
+    image = MultipleFileField('Item Image', validators=[FileAllowed(['jpg','jpeg','png','gif'], 'Only image files are allowed!')])
     submit = SubmitField('List Item')
 
     def __init__(self, *args, **kwargs):
@@ -90,6 +94,7 @@ class AssignExpertForm(FlaskForm):
 class AuthenticateForm(FlaskForm):
     approve = SubmitField("Approve Authenticity")
     reject = SubmitField("Reject Authenticity")
+    reject_reason = TextAreaField("Reason for Rejection")
 
 class PaymentForm(FlaskForm):
     card_number = StringField('Card Number', validators=[DataRequired(), Length(min=16, max=16)])
