@@ -37,7 +37,13 @@
       
             <p><strong>Description:</strong> {{ item.description }}</p>
             <p><strong>Current Price:</strong> £{{ item.current_price }}</p>
-            <p><strong>Ends In:</strong> <span class="text-danger fw-bold">{{ item.time_left() }}</span></p>
+            <p class="text-muted">
+              <strong>Time Left:</strong> 
+              <span class="countdown-timer" 
+                    data-endtime="{{ item.end_time.timestamp() }}">
+                    {{ item.time_left() }}
+              </span>
+            </p>
       
             {% if current_user.is_authenticated %}
               {% if item.seller_id != current_user.id %}
