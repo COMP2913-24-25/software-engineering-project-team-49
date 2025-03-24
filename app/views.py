@@ -507,3 +507,21 @@ def toggle_watch(item_id):
 
     db.session.commit()
     return redirect(request.form.get("next") or url_for('views.auction_detail', item_id=item_id))
+
+@views.route('/watch_item/<int:item_id>', methods=['POST'])
+@login_required
+def watch_item(item_id):
+    item = Item.query.get_or_404(item_id)
+    current_user.watched_items.append(item)
+    db.session.commit()
+    flash(f"Added '{item.name}' to your watchlist!", "success")
+    return redirect(url_for('views.auction_detail', item_id=item_id))
+
+@views.route('/unwatch_item/<int:item_id>', methods=['POST'])
+@login_required
+def unwatch_item(item_id):
+    item = Item.query.get_or_404(item_id)
+    current_user.watched_items.remove(item)
+    db.session.commit()
+    flash(f"Removed '{item.name}' from your watchlist.", "info")
+    return redirect(url_for('views.auction_detail', item_id=item_id))
