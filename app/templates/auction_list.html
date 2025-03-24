@@ -15,7 +15,7 @@
         <div class="col-md-4 mb-4">
             <div class="card h-100 shadow-sm">
                 {% if item.images %}
-                    <img src="{{ url_for('static', filename=item.images[0].image_path.split('static/')[-1]) }}" class="card-img-top" alt="Auction Image">
+                <img src="{{ url_for('static', filename=item.images[0].image_path) }}" class="card-img-top" alt="Auction Image">
                 {% else %}
                     <img src="{{ url_for('static', filename='images/placeholder.png') }}" class="card-img-top" alt="No Image Available">
                 {% endif %}

@@ -9,8 +9,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm, PaymentForm
 from .models import User, Item, ItemStatus,ItemImage, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus, Payment
+import os
+from werkzeug.utils import secure_filename
 
-UPLOAD_FOLDER = 'static/uploads'
+UPLOAD_FOLDER = 'app/static/uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
 def allowed_file(filename):
@@ -116,8 +118,8 @@ def list_item():
         db.session.commit()
 
         # Handle Image Uploads
-        if 'images' in request.files:
-            files = request.files.getlist('images')  # Get list of uploaded images
+        if 'image' in request.files:
+            files = request.files.getlist('image')  # Get list of uploaded images
             for file in files:
                 if file and allowed_file(file.filename):
                     filename = secure_filename(file.filename)
@@ -125,7 +127,7 @@ def list_item():
                     file.save(file_path)  # Save image
 
                     # Create ItemImage entry for the database
-                    item_image = ItemImage(item_id=new_item.id, image_path=file_path)
+                    item_image = ItemImage(item_id=new_item.id, image_path=f'uploads/{filename}')
                     db.session.add(item_image)
 
         db.session.commit() 
