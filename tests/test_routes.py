@@ -18,7 +18,8 @@ def test_signup(client):
         "first_name": "John",
         "last_name": "Doe",
         "password": "securepassword",
-        "confirm_password": "securepassword"
+        "confirm_password": "securepassword",
+        "type": "1"
     }, follow_redirects=True)
     
     assert response.status_code == 200
