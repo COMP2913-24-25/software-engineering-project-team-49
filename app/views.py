@@ -493,21 +493,6 @@ def process_payment(item_id):
         flash("You are not authorized to make this payment.", "danger")
         return redirect(url_for('views.basket'))
 
-@views.route('/toggle_watch/<int:item_id>', methods=['POST'])
-@login_required
-def toggle_watch(item_id):
-    item = Item.query.get_or_404(item_id)
-
-    if current_user in item.watchers:
-        item.watchers.remove(current_user)
-        flash(f"Removed '{item.name}' from your watchlist.", "info")
-    else:
-        item.watchers.append(current_user)
-        flash(f"Added '{item.name}' to your watchlist!", "success")
-
-    db.session.commit()
-    return redirect(request.form.get("next") or url_for('views.auction_detail', item_id=item_id))
-
 @views.route('/watch_item/<int:item_id>', methods=['POST'])
 @login_required
 def watch_item(item_id):
@@ -525,3 +510,9 @@ def unwatch_item(item_id):
     db.session.commit()
     flash(f"Removed '{item.name}' from your watchlist.", "info")
     return redirect(url_for('views.auction_detail', item_id=item_id))
+
+@views.route('/watching')
+@login_required
+def watching():
+    items = current_user.watched_items.all()
+    return render_template('watching.html', items=items)
