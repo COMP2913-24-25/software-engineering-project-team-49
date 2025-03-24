@@ -20,13 +20,18 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
+            <ul class="navbar-nav me-auto">
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('views.auction_list') }}">Auctions</a></li>
                 {% if current_user.is_authenticated %}
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('views.notifications') }}">Notifications</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('views.basket') }}">Basket</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('views.list_item') }}">List an Item</a></li>
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('views.watching') }}">Watching</a></li>
+                {% endif %}
+            </ul>
+
+            <ul class="navbar-nav">
+                {% if current_user.is_authenticated %}
                     <li class="nav-item"><a class="nav-link" href="{{ url_for('views.account') }}">My Account</a></li>
                     <li class="nav-item"><a class="nav-link text-danger" href="{{ url_for('views.logout') }}">Logout</a></li>
                 {% else %}
