@@ -19,7 +19,13 @@
                     <h5 class="card-title">{{ item.name }}</h5>
                     <p class="card-text">{{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}</p>
                     <p class="card-text"><strong>Current Price:</strong> £{{ item.current_price }}</p>
-                    <p class="card-text"><strong>Time Left:</strong> {{ item.time_left() }}</p>
+                    <p class="text-muted">
+                        <strong>Time Left:</strong> 
+                        <span class="countdown-timer" 
+                              data-endtime="{{ item.end_time.timestamp() }}">
+                              {{ item.time_left() }}
+                        </span>
+                    </p>
                     <a href="{{ url_for('views.auction_detail', item_id=item.id) }}" class="btn btn-primary">View Auction</a>
                 </div>
             </div>
