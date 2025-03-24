@@ -7,7 +7,7 @@ from flask import render_template, flash, request, redirect, url_for
 from flask_login import login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
-from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm, PaymentForm, ConfigFeeForm
+from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm, PaymentForm, ConfigFeeForm, AccountUpdateForm
 from .models import User, Item, ItemStatus,ItemImage, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus, Payment, SystemConfiguration
 import os
 from werkzeug.utils import secure_filename
@@ -516,3 +516,32 @@ def unwatch_item(item_id):
 def watching():
     items = current_user.watched_items.all()
     return render_template('watching.html', items=items)
+
+@views.route('/account', methods=['GET', 'POST'])
+@login_required
+def account():
+    form = AccountUpdateForm(current_user)
+    
+    if form.validate_on_submit():
+        # Update user information
+        current_user.first_name = form.first_name.data
+        current_user.last_name = form.last_name.data
+        current_user.username = form.username.data
+        current_user.email = form.email.data
+        
+        try:
+            db.session.commit()
+            flash('Your account has been updated!', 'success')
+            return redirect(url_for('views.account'))
+        except:
+            db.session.rollback()
+            flash('An error occurred while updating your account.', 'danger')
+    
+    # Populate form with current user data on GET request
+    elif request.method == 'GET':
+        form.first_name.data = current_user.first_name
+        form.last_name.data = current_user.last_name
+        form.username.data = current_user.username
+        form.email.data = current_user.email
+    
+    return render_template('account.html', form=form)
