@@ -108,3 +108,30 @@ class ConfigFeeForm(FlaskForm):
     default_fee = DecimalField('Default fee percentage is 1%', validators=[DataRequired(), NumberRange(min=0, max=100)], places=2)
     expert_fee = DecimalField('Expert Approved fee percenatge is 5%', validators=[DataRequired(), NumberRange(min=0, max=100)], places=2)
     submit = SubmitField('Submit')
+
+class AccountUpdateForm(FlaskForm):
+    first_name = StringField('First Name', validators=[Length(max=64)])
+    last_name = StringField('Last Name', validators=[Length(max=64)])
+    email = StringField('Email', validators=[DataRequired(), Length(max=120)])
+    username = StringField('Username', validators=[DataRequired(), Length(min=3, max=64)])
+    submit = SubmitField('Update Profile')
+
+    def __init__(self, current_user, *args, **kwargs):
+        super(AccountUpdateForm, self).__init__(*args, **kwargs)
+        self.current_user = current_user
+
+    def validate_username(self, username):
+        # Check if username is different from current username
+        if username.data != self.current_user.username:
+            # Check if username already exists
+            user = User.query.filter_by(username=username.data).first()
+            if user:
+                raise ValidationError('That username is already taken. Please choose a different one.')
+
+    def validate_email(self, email):
+        # Check if email is different from current email
+        if email.data != self.current_user.email:
+            # Check if email already exists
+            user = User.query.filter_by(email=email.data).first()
+            if user:
+                raise ValidationError('That email is already taken. Please choose a different one.')
