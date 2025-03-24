@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2>View weekly costs</h2>
+    <p>Period: Last 7 days</p>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Item ID</th>
+                <th>Amount (£)</th>
+                <th>Fee (%)</th>
+                <th>Fee amount (£)</th>
+                <th>Completed At</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for payemnt in payments %}
+            <tr>
+                <td>{{ payment.item_id }}</td>
+                <td>£{{ "%.2f"|format(payment.amount) }}</td>
+                <td>{{ "%.2f"|format(payment.fee_percentage) * 100 }}%</td>
+                <td>£{{ "%.2f"|format(payment.fee_amount) }}</td>
+                <td>{{ payemnt.completed_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <h3>Total sales revenue: £{{ "%.2f"|format(total_revenue) }}</h3>
+    <h3>Total fees earned: £{{ "%.2f"|format(total_fees) }}</h3>
+    <h3>Percentage earnings: £{{ "%.2f"|format(percentage_earnings) }}%</h3>
+</div>
+{% endblock %}

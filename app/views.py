@@ -7,8 +7,8 @@ from flask import render_template, flash, request, redirect, url_for
 from flask_login import login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
-from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm, PaymentForm
-from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus, Payment
+from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm, PaymentForm, ConfigFeeForm
+from .models import User, Item, ItemStatus, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus, Payment, SystemConfiguration
 
 
 @views.route('/')
@@ -18,15 +18,26 @@ def welcome():
 
 @views.route('/signup', methods=['GET', 'POST'])
 def signup():
-	form = SignUpForm()
-	if form.validate_on_submit():
-		new_user = User(first_name = form.first_name.data, last_name = form.last_name.data ,username=form.username.data, email=form.email.data)
-		new_user.set_password(form.password.data)
-		db.session.add(new_user)
-		db.session.commit()
-		flash('Account successfully created! You will now be redirected to the login page!', 'success')
-		return redirect(url_for('views.login'))
-	return render_template('signup.html', form=form)
+    form = SignUpForm()
+    if form.validate_on_submit():
+        if form.type.data == '1':
+            new_user = User(first_name=form.first_name.data, last_name=form.last_name.data, username=form.username.data, email=form.email.data)
+            new_user.set_password(form.password.data)
+            db.session.add(new_user)
+            db.session.commit()
+        elif form.type.data == '2':
+            new_user = User(first_name=form.first_name.data, last_name=form.last_name.data, username=form.username.data, email=form.email.data, priority=UserPriority.EXPERT.value)
+            new_user.set_password(form.password.data)
+            db.session.add(new_user)
+            db.session.commit()
+        else:
+            new_user = User(first_name=form.first_name.data, last_name=form.last_name.data, username=form.username.data, email=form.email.data, priority=UserPriority.MANAGER.value)
+            new_user.set_password(form.password.data)
+            db.session.add(new_user)
+            db.session.commit()
+        flash('Account successfully created! You will now be redirected to the login page!', 'success')
+        return redirect(url_for('views.login'))
+    return render_template('signup.html', form=form)
 
 @views.route('/login', methods=['GET', 'POST'])
 def login():
@@ -313,6 +324,43 @@ def assign_expert(item_id):
         return redirect(url_for('views.manager'))
     return render_template('assign_expert.html', form=form, item=item)
 
+@views.route('/configure_fees', methods=['GET', 'POST'])
+def configure_fees():
+    form = ConfigFeeForm()
+    if form.validate_on_submit():
+        default_fee = form.default_fee.data / 100
+        expert_fee = form.expert_fee.data / 100
+        for key, value in [('regular_fee_percentage', default_fee), ('authenticated_fee_percentage', expert_fee)]:
+            config = SystemConfiguration.query.filter_by(key=key).first()
+            if config:
+                config.value = str(value)
+            else:
+                db.session.add(SystemConfiguration(key=key, value=str(value)))
+        db.session.commit()
+        flash("Fee percentages updated successfully", "success")
+        return redirect(url_for('views.manager'))
+    config = SystemConfiguration.query.filter_by(key='regular_fee_percentage').first()
+    if config is not None:
+        form.default_fee.data = float(config.value) * 100
+    else:
+        form.default_fee.data = 1
+    config = SystemConfiguration.query.filter_by(key='authenticated_fee_percentage').first()
+    if config is not None:
+        form.expert_fee.data = float(config.value) * 100
+    else:
+        form.expert_fee.data = 5
+    return render_template('configure_fees.html', form=form)
+
+@views.route('/weekly_costs', methods=['GET'])
+@login_required
+def weekly_costs():
+    one_week_ago = datetime.utcnow() - timedelta(days=7)
+    payments = Payment.query.filter(Payment.status=='completed', Payment.completed_at >= one_week_ago).all()
+    total_revenue = sum(payment.amount for payment in payments)
+    total_fees = sum(payment.fee_amount for payment in payments)
+    percentage_earnings = (total_fees / total_revenue * 100) if total_revenue else 0
+    return render_template('weekly_costs.html', payments=payments, total_revenue=total_revenue, total_fees=total_fees, percentage_earnings=percentage_earnings)
+
 @views.route('/basket', methods=['GET', 'POST'])
 @login_required
 def basket():
@@ -347,9 +395,17 @@ def process_payment(item_id):
     
     if highest_bid and highest_bid.user_id == current_user.id:
         # Get fee percentage from system configuration
-        fee_percentage = 0.01  # Default 1%
+        config = SystemConfiguration.query.filter_by(key='regular_fee_percentage').first()
+        if config is not None:
+            fee_percentage = float(config.value)
+        else:
+            fee_percentage = 0.01
         if item.is_authenticated:
-            fee_percentage = 0.05  # 5% for authenticated items
+            config = SystemConfiguration.query.filter_by(key="authenticated_fee_percentage").first()
+            if config is not None:
+                fee_percentage = float(config.value)
+            else:
+                fee_percentage = 0.05
             
         fee_amount = highest_bid.amount * fee_percentage
         
