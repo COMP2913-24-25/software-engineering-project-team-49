@@ -230,7 +230,7 @@ def expert():
         flash("Access denied.", "danger")
         return redirect(url_for('views.home'))
 
-    pending_items = AuthenticationRequest.query.join(Item).filter(
+    pending_items = Item.query.join(AuthenticationRequest).filter(
         AuthenticationRequest.expert_id == current_user.id,
         AuthenticationRequest.status == AuthenticationStatus.PENDING.value
     ).all()
