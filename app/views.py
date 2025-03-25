@@ -21,7 +21,11 @@ def allowed_file(filename):
 @views.route('/')
 @views.route('/welcome')
 def welcome():
-	return render_template('welcome.html')
+    if current_user.is_expert():
+        return redirect(url_for('views.expert'))
+    if current_user.is_manager():
+        return redirect(url_for('views.manager'))
+    return render_template('welcome.html')
 
 @views.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -85,6 +89,11 @@ def logout():
 @views.route('/home')
 def home():
     """ Display homepage with 5 auctions that are ending soonest """
+    if current_user.is_expert():
+        return redirect(url_for('views.expert'))
+    if current_user.is_manager():
+        return redirect(url_for('views.manager'))
+
     now = datetime.utcnow()
 
     featured_auctions = Item.query.filter(
@@ -98,6 +107,11 @@ def home():
 @views.route('/list_items', methods=['GET', 'POST'])
 @login_required
 def list_item():
+    if current_user.is_expert():
+        return redirect(url_for('views.expert'))
+    if current_user.is_manager():
+        return redirect(url_for('views.manager'))
+
     form = AuctionItemForm()
 
     if form.validate_on_submit():
@@ -148,6 +162,10 @@ def list_item():
 @views.route('/auction_list')
 def auction_list():
     """ Display only active auctions"""
+    if current_user.is_expert():
+        return redirect(url_for('views.expert'))
+    if current_user.is_manager():
+        return redirect(url_for('views.manager'))
     items = Item.query.filter(Item.status == ItemStatus.ACTIVE.value).all()
     return render_template('auction_list.html', items=items)
 
@@ -170,6 +188,11 @@ def search():
 @views.route('/auction_detail/<int:item_id>', methods=['GET', 'POST'])
 def auction_detail(item_id):
     """ Display auction details for a single item """
+    if current_user.is_expert():
+        return redirect(url_for('views.expert'))
+    if current_user.is_manager():
+        return redirect(url_for('views.manager'))
+    
     item = Item.query.get_or_404(item_id)
     form = BidItemForm(item_price=item.current_price)
 
@@ -217,8 +240,12 @@ def auction_detail(item_id):
 @views.route('/notifications', methods=['GET'])
 @login_required
 def notifications():
-     notifications = Notification.query.filter(Notification.user_id==current_user.id)
-     return render_template('notifications.html', notifications=notifications)
+    if current_user.is_expert():
+        return redirect(url_for('views.expert'))
+    if current_user.is_manager():
+        return redirect(url_for('views.manager'))
+    notifications = Notification.query.filter(Notification.user_id==current_user.id)
+    return render_template('notifications.html', notifications=notifications)
 
 @views.route('/expert', methods=['GET', 'POST'])
 @login_required
@@ -236,6 +263,9 @@ def expert():
 @views.route('/select_availability', methods=['GET', 'POST'])
 @login_required
 def select_availability():
+    if current_user.priority != UserPriority.EXPERT.value:
+        flash("Access denied.", "danger")
+        return redirect(url_for('views.home'))
     form = AvailabilityForm()
     unavailable = UnavailableForm()
     if 'available_submit' in request.form:
@@ -287,6 +317,9 @@ def select_availability():
 @views.route('/select_category', methods=['GET', 'POST'])
 @login_required
 def select_category():
+    if current_user.priority != UserPriority.EXPERT.value:
+        flash("Access denied.", "danger")
+        return redirect(url_for('views.home'))
     form = CategoryForm()
     if form.validate_on_submit():
         ExpertCategory.query.filter_by(user_id=current_user.id).delete()
@@ -301,6 +334,9 @@ def select_category():
 @views.route('/authenticate_item/<int:item_id>', methods=['GET','POST'])
 @login_required
 def authenticate_item(item_id):
+    if current_user.priority != UserPriority.EXPERT.value:
+        flash("Access denied.", "danger")
+        return redirect(url_for('views.home'))
     item = Item.query.get_or_404(item_id)
     authentication = AuthenticationRequest.query.filter_by(item_id=item.id).first()
     action = request.form.get('action')
@@ -325,6 +361,9 @@ def authenticate_item(item_id):
 @views.route('/manager', methods=['GET', 'POST'])
 @login_required
 def manager():
+    if current_user.priority != UserPriority.MANAGER.value:
+        flash("Access denied.", "danger")
+        return redirect(url_for('views.home'))
     pending_items = Item.query.filter_by(status=ItemStatus.PENDING.value).all()
     experts = User.query.filter_by(priority=UserPriority.EXPERT.value).all()
     return render_template('manager.html', items=pending_items, experts=experts)
@@ -332,6 +371,9 @@ def manager():
 @views.route('/assign_expert/<int:item_id>', methods=['GET', 'POST'])
 @login_required
 def assign_expert(item_id):
+    if current_user.priority != UserPriority.MANAGER.value:
+        flash("Access denied.", "danger")
+        return redirect(url_for('views.home'))
     item = Item.query.get_or_404(item_id)
     experts = User.query.join(ExpertCategory).filter(ExpertCategory.category == item.category_rel.name, User.priority == UserPriority.EXPERT.value).all()
     print(f"Eligible experts for category {item.category_id}: {experts}")
@@ -360,6 +402,9 @@ def assign_expert(item_id):
 
 @views.route('/configure_fees', methods=['GET', 'POST'])
 def configure_fees():
+    if current_user.priority != UserPriority.MANAGER.value:
+        flash("Access denied.", "danger")
+        return redirect(url_for('views.home'))
     form = ConfigFeeForm()
     if form.validate_on_submit():
         default_fee = form.default_fee.data / 100
@@ -388,6 +433,9 @@ def configure_fees():
 @views.route('/weekly_costs', methods=['GET'])
 @login_required
 def weekly_costs():
+    if current_user.priority != UserPriority.MANAGER.value:
+        flash("Access denied.", "danger")
+        return redirect(url_for('views.home'))
     one_week_ago = datetime.utcnow() - timedelta(days=7)
     payments = Payment.query.filter(Payment.status=='completed', Payment.completed_at >= one_week_ago).all()
     total_revenue = sum(payment.amount for payment in payments)
@@ -398,6 +446,9 @@ def weekly_costs():
 @views.route('/manage_users', methods=['GET','POST'])
 @login_required
 def manage_users():
+    if current_user.priority != UserPriority.MANAGER.value:
+        flash("Access denied.", "danger")
+        return redirect(url_for('views.home'))
     user_id = request.form.get('user_id')
     new_role = request.form.get('new_role')
     users = User.query.all()
@@ -415,6 +466,10 @@ def manage_users():
 @views.route('/basket', methods=['GET', 'POST'])
 @login_required
 def basket():
+    if current_user.is_expert():
+        return redirect(url_for('views.expert'))
+    if current_user.is_manager():
+        return redirect(url_for('views.manager'))
     paying_items = Item.query.filter(Item.status == ItemStatus.PAYING.value, Item.winner_id == current_user.id).all()
     return render_template('basket.html', paying_items = paying_items)
 
@@ -428,6 +483,10 @@ def my_watched():
 @views.route('/payment_interface/<int:item_id>', methods=['GET', 'POST'])
 @login_required
 def payment_interface(item_id):
+    if current_user.is_expert():
+        return redirect(url_for('views.expert'))
+    if current_user.is_manager():
+        return redirect(url_for('views.manager'))
     form = PaymentForm()
     item = Item.query.get_or_404(item_id)
     #check if user has saved data
@@ -528,12 +587,20 @@ def unwatch_item(item_id):
 @views.route('/watching')
 @login_required
 def watching():
+    if current_user.is_expert():
+        return redirect(url_for('views.expert'))
+    if current_user.is_manager():
+        return redirect(url_for('views.manager'))
     items = current_user.watched_items.all()
     return render_template('watching.html', items=items)
 
 @views.route('/account', methods=['GET', 'POST'])
 @login_required
 def account():
+    if current_user.is_expert():
+        return redirect(url_for('views.expert'))
+    if current_user.is_manager():
+        return redirect(url_for('views.manager'))
     form = AccountUpdateForm(current_user)
     
     if form.validate_on_submit():
