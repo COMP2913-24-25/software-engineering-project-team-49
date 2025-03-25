@@ -85,7 +85,7 @@ def home():
     featured_auctions = Item.query.filter(
         Item.status == ItemStatus.ACTIVE.value,
         Item.end_time > now
-    ).order_by(Item.end_time.asc()).limit(5).all()
+    ).order_by(Item.end_time.asc()).limit(6).all()
 
     return render_template('home.html', featured_auctions=featured_auctions)
 
