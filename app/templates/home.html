@@ -7,28 +7,60 @@
         <p>Find and bid on unique items!</p>
     </div>
 
-    <!-- Search Bar -->
+    <!-- 🔍 Search Bar -->
     <form action="{{ url_for('views.search') }}" method="GET" class="my-4">
         <input class="form-control w-50 mx-auto" type="search" placeholder="Search auctions..." name="query" required>
         <button class="btn btn-primary mt-2">🔍 Search</button>
     </form>
 
-    <!-- Featured Auctions -->
-    <h2 class="mt-4">🔥 Featured Auctions</h2>
-    <div class="row">
-        {% for item in featured_auctions %}
-        <div class="col-md-4">
-            <div class="card mb-4 shadow-sm">
-                <img src="{{ url_for('static', filename=item.images[0].image_path) }}" class="card-img-top" alt="Auction Image">
-                <div class="card-body text-center">
-                    <h5 class="card-title">{{ item.name }}</h5>
-                    <p class="card-text"><strong>Current Price:</strong> £{{ item.current_price }}</p>
-                    <p class="card-text"><strong>Ends In:</strong> {{ item.time_left() }}</p>
-                    <a href="{{ url_for('views.auction_detail', item_id=item.id) }}" class="btn btn-primary">View Auction</a>
+    <!-- Featured Auctions Carousel -->
+    <h2 class="mt-5 mb-3 text-center">🔥 Featured Auctions</h2>
+    <div id="featuredCarousel" class="carousel slide carousel" data-bs-ride="carousel" data-bs-interval="5000" data-bs-pause="hover">
+
+        <!-- Carousel Indicators -->
+        <div class="carousel-indicators">
+            {% for group in featured_auctions|batch(3, '') %}
+            <button type="button" data-bs-target="#featuredCarousel" data-bs-slide-to="{{ loop.index0 }}" class="{% if loop.first %}active{% endif %}" aria-current="{% if loop.first %}true{% endif %}" aria-label="Slide {{ loop.index }}"></button>
+            {% endfor %}
+        </div>
+
+        <div class="carousel-inner">
+            {% for group in featured_auctions|batch(3, '') %}
+            <div class="carousel-item {% if loop.first %}active{% endif %}">
+                <div class="row justify-content-center">
+                    {% for item in group %}
+                    {% if item %}
+                    <div class="col-12 col-sm-6 col-lg-4">
+                        <div class="card mb-4 shadow-sm auction-card">
+                            {% if item.images and item.images[0] %}
+                                <img src="{{ url_for('static', filename=item.images[0].image_path.split('static/')[-1]) }}"
+                                     class="card-img-top" alt="Auction Image">
+                            {% else %}
+                                <img src="{{ url_for('static', filename='images/placeholder.png') }}"
+                                     class="card-img-top" alt="No image available">
+                            {% endif %}
+                            <div class="card-body text-center">
+                                <h5 class="card-title">{{ item.name }}</h5>
+                                <p class="card-text"><strong>Current Price:</strong> £{{ item.current_price }}</p>
+                                <p class="card-text"><strong>Ends In:</strong> {{ item.time_left() }}</p>
+                                <a href="{{ url_for('views.auction_detail', item_id=item.id) }}" class="btn btn-primary">View Auction</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
                 </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
+
+        <!-- Carousel Controls -->
+        <button class="carousel-control-prev" type="button" data-bs-target="#featuredCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#featuredCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+        </button>
     </div>
 </div>
 

@@ -84,16 +84,13 @@ def logout():
 
 @views.route('/home')
 def home():
-    """ Display homepage with auctions that have 1-2 days left """
+    """ Display homepage with 5 auctions that are ending soonest """
     now = datetime.utcnow()
-    one_day_from_now = now + timedelta(days=1)
-    two_days_from_now = now + timedelta(days=2)
 
     featured_auctions = Item.query.filter(
         Item.status == ItemStatus.ACTIVE.value,
-        Item.end_time >= one_day_from_now,
-        Item.end_time <= two_days_from_now
-    ).limit(5).all()  # Limit to 5 auctions for now
+        Item.end_time > now
+    ).order_by(Item.end_time.asc()).limit(6).all()
 
     return render_template('home.html', featured_auctions=featured_auctions)
 
