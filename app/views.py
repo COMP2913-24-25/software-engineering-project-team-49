@@ -380,7 +380,11 @@ def manager():
         return redirect(url_for('views.home'))
     pending_items = Item.query.filter_by(status=ItemStatus.PENDING.value).all()
     experts = User.query.filter_by(priority=UserPriority.EXPERT.value).all()
-    return render_template('manager.html', items=pending_items, experts=experts)
+    # Create a dictionary mapping expert IDs to their categories
+    expert_categories = {
+        expert.id: [category.category for category in expert.expertise] for expert in experts
+    }
+    return render_template('manager.html', items=pending_items, experts=experts, expert_categories=expert_categories)
 
 @views.route('/assign_expert/<int:item_id>', methods=['GET', 'POST'])
 @login_required
