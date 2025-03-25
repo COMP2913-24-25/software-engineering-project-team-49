@@ -1,17 +1,18 @@
-{% extends "base.html" %}
+{% extends "expert_base.html" %}
 {% block content %}
 <div class="container mt-5">
     <h1>Welcome to the Expert Page</h1>
-    <h2>Set your availability:</h2>
-    <div>
-        <a href="{{ url_for('views.select_availability') }}">Change expert availability</a>
-    </div>
-    <div>
-        <a href="{{ url_for('views.select_category') }}">Change expertise categories</a>
-    </div>
-    <div>
-        <a href="{{ url_for('views.notifications') }}">Check notifications</a>
-    </div>
+    <h4>Your Categories:</h4>
+    {% if categories %}
+        <ul>
+            {% for category in categories %}
+                <li>{{ category }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>You have not selected any categories yet.</p>
+    {% endif %}
+
     <h2>Pending Items</h2>
     {% if items %}
         <table class="table table-striped">

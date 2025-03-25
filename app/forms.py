@@ -112,7 +112,7 @@ class ConfigFeeForm(FlaskForm):
 class AccountUpdateForm(FlaskForm):
     first_name = StringField('First Name', validators=[Length(max=64)])
     last_name = StringField('Last Name', validators=[Length(max=64)])
-    email = StringField('Email', validators=[DataRequired(), Length(max=120)])
+    email = StringField('Email', validators=[DataRequired(), Email(message="Invalid email address"), Regexp(r'^[^@]+@[^@]+\.[^@]+$', message="Invalid email format"), Length(min = 3, max=100, message="Email should be between 3 and 100 characters")])
     username = StringField('Username', validators=[DataRequired(), Length(min=3, max=64)])
     submit = SubmitField('Update Profile')
 

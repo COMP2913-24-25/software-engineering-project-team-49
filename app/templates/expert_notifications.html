@@ -1,0 +1,26 @@
+{% extends "expert_base.html" %}
+{% block content %}
+
+<div class="container mt-5">
+    <h2>Notifications</h2>
+    
+    {% if notifications %}
+    {% for notification in notifications %}
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card mb-3 shadow">
+                <div class="card-body">
+                    <h5 class="card-title">{{ notification.type|capitalize }}</h5>
+                    <p class="card-text">{{ notification.message }}</p>
+                    <small class="text-muted">{{ notification.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p>No new notifications.</p>
+    {% endif %}
+</div>
+
+{% endblock %}

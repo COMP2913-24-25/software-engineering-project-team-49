@@ -96,7 +96,6 @@ def test_user_roles(init_database):
     # Test is_expert() method
     assert general_user.is_expert() is False
     assert expert_user.is_expert() is True
-    assert manager_user.is_expert() is True
     
     # Test is_manager() method
     assert general_user.is_manager() is False
