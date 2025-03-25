@@ -71,7 +71,7 @@ class User(db.Model, UserMixin):
         return check_password_hash(self.password_hash, password)
     
     def is_expert(self):
-        return self.priority >= UserPriority.EXPERT.value
+        return self.priority == UserPriority.EXPERT.value
     
     def is_manager(self):
         return self.priority == UserPriority.MANAGER.value

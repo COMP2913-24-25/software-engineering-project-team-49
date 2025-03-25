@@ -1,17 +1,8 @@
-{% extends "base.html" %}
+{% extends "manager_base.html" %}
 {% block content %}
 <div class="container mt-5">
     <h1>Welcome to the Manager Page</h1>
     <h2>Pending Items</h2>
-    <div>
-        <a href="{{ url_for('views.configure_fees') }}" class="btn btn-info">Configure percentage costs</a>
-    </div>
-    <div>
-        <a href="{{ url_for('views.weekly_costs') }}" class="btn btn-info">View weekly costs</a>
-    </div>
-    <div>
-        <a href="{{ url_for('views.manage_users') }}" class="btn btn-info">Manage user roles</a>
-    </div>
     {% if items %}
         <table class="table table-striped">
             <thead>

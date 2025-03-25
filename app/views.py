@@ -681,3 +681,35 @@ def expert_account():
         form.email.data = current_user.email
     
     return render_template('expert_account.html', form=form)
+
+@views.route('/manager_account', methods=['GET', 'POST'])
+@login_required
+def manager_account():
+    if current_user.priority != UserPriority.MANAGER.value:
+        flash("Access denied.", "danger")
+        return redirect(url_for('views.home'))
+    form = AccountUpdateForm(current_user)
+    
+    if form.validate_on_submit():
+        # Update user information
+        current_user.first_name = form.first_name.data
+        current_user.last_name = form.last_name.data
+        current_user.username = form.username.data
+        current_user.email = form.email.data
+        
+        try:
+            db.session.commit()
+            flash('Your account has been updated!', 'success')
+            return redirect(url_for('views.manager_account'))
+        except:
+            db.session.rollback()
+            flash('An error occurred while updating your account.', 'danger')
+    
+    # Populate form with current user data on GET request
+    elif request.method == 'GET':
+        form.first_name.data = current_user.first_name
+        form.last_name.data = current_user.last_name
+        form.username.data = current_user.username
+        form.email.data = current_user.email
+    
+    return render_template('manager_account.html', form=form)
