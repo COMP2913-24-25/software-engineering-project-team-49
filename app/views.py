@@ -270,7 +270,9 @@ def expert():
         AuthenticationRequest.expert_id == current_user.id,
         AuthenticationRequest.status == AuthenticationStatus.PENDING.value
     ).all()
-    return render_template('expert.html', items=pending_items)
+
+    expert_categories = [category.category for category in current_user.expertise]
+    return render_template('expert.html', items=pending_items, categories=expert_categories)
 
 @views.route('/select_availability', methods=['GET', 'POST'])
 @login_required
@@ -647,3 +649,35 @@ def expert_notifications():
         return redirect(url_for('views.home'))
      notifications = Notification.query.filter(Notification.user_id==current_user.id)
      return render_template('expert_notifications.html', notifications=notifications)
+
+@views.route('/expert_account', methods=['GET', 'POST'])
+@login_required
+def expert_account():
+    if current_user.priority != UserPriority.EXPERT.value:
+        flash("Access denied.", "danger")
+        return redirect(url_for('views.home'))
+    form = AccountUpdateForm(current_user)
+    
+    if form.validate_on_submit():
+        # Update user information
+        current_user.first_name = form.first_name.data
+        current_user.last_name = form.last_name.data
+        current_user.username = form.username.data
+        current_user.email = form.email.data
+        
+        try:
+            db.session.commit()
+            flash('Your account has been updated!', 'success')
+            return redirect(url_for('views.expert_account'))
+        except:
+            db.session.rollback()
+            flash('An error occurred while updating your account.', 'danger')
+    
+    # Populate form with current user data on GET request
+    elif request.method == 'GET':
+        form.first_name.data = current_user.first_name
+        form.last_name.data = current_user.last_name
+        form.username.data = current_user.username
+        form.email.data = current_user.email
+    
+    return render_template('expert_account.html', form=form)
