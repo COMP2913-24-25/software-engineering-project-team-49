@@ -333,7 +333,12 @@ def manager():
 @login_required
 def assign_expert(item_id):
     item = Item.query.get_or_404(item_id)
-    experts = User.query.join(ExpertCategory).filter(ExpertCategory.category == item.category_rel.name, User.priority == UserPriority.EXPERT.value).all()
+    from sqlalchemy import func
+
+    experts = User.query.join(ExpertCategory).filter(
+        func.lower(ExpertCategory.category) == func.lower(item.category_rel.name), 
+        User.priority == UserPriority.EXPERT.value
+    ).all()
     print(f"Eligible experts for category {item.category_id}: {experts}")
     form = AssignExpertForm()
     form.expert.choices = [(expert.id, expert.username) for expert in experts]
