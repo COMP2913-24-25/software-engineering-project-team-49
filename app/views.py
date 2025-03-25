@@ -18,12 +18,24 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def is_expert_user(user):
+    """
+    Safely check if a user is an expert, handling AnonymousUserMixin
+    """
+    return hasattr(user, 'is_expert') and user.is_expert()
+
+def is_manager_user(user):
+    """
+    Safely check if a user is a manager, handling AnonymousUserMixin
+    """
+    return hasattr(user, 'is_manager') and user.is_manager()
+
 @views.route('/')
 @views.route('/welcome')
 def welcome():
-    if current_user.is_expert():
+    if is_expert_user(current_user):
         return redirect(url_for('views.expert'))
-    if current_user.is_manager():
+    if is_manager_user(current_user):
         return redirect(url_for('views.manager'))
     return render_template('welcome.html')
 
@@ -89,9 +101,9 @@ def logout():
 @views.route('/home')
 def home():
     """ Display homepage with 5 auctions that are ending soonest """
-    if current_user.is_expert():
+    if is_expert_user(current_user):
         return redirect(url_for('views.expert'))
-    if current_user.is_manager():
+    if is_manager_user(current_user):
         return redirect(url_for('views.manager'))
 
     now = datetime.utcnow()
@@ -107,9 +119,9 @@ def home():
 @views.route('/list_items', methods=['GET', 'POST'])
 @login_required
 def list_item():
-    if current_user.is_expert():
+    if is_expert_user(current_user):
         return redirect(url_for('views.expert'))
-    if current_user.is_manager():
+    if is_manager_user(current_user):
         return redirect(url_for('views.manager'))
 
     form = AuctionItemForm()
@@ -162,9 +174,9 @@ def list_item():
 @views.route('/auction_list')
 def auction_list():
     """ Display only active auctions"""
-    if current_user.is_expert():
+    if is_expert_user(current_user):
         return redirect(url_for('views.expert'))
-    if current_user.is_manager():
+    if is_manager_user(current_user):
         return redirect(url_for('views.manager'))
     items = Item.query.filter(Item.status == ItemStatus.ACTIVE.value).all()
     return render_template('auction_list.html', items=items)
@@ -188,9 +200,9 @@ def search():
 @views.route('/auction_detail/<int:item_id>', methods=['GET', 'POST'])
 def auction_detail(item_id):
     """ Display auction details for a single item """
-    if current_user.is_expert():
+    if is_expert_user(current_user):
         return redirect(url_for('views.expert'))
-    if current_user.is_manager():
+    if is_manager_user(current_user):
         return redirect(url_for('views.manager'))
     
     item = Item.query.get_or_404(item_id)
@@ -240,9 +252,9 @@ def auction_detail(item_id):
 @views.route('/notifications', methods=['GET'])
 @login_required
 def notifications():
-    if current_user.is_expert():
+    if is_expert_user(current_user):
         return redirect(url_for('views.expert'))
-    if current_user.is_manager():
+    if is_manager_user(current_user):
         return redirect(url_for('views.manager'))
     notifications = Notification.query.filter(Notification.user_id==current_user.id)
     return render_template('notifications.html', notifications=notifications)
@@ -466,9 +478,9 @@ def manage_users():
 @views.route('/basket', methods=['GET', 'POST'])
 @login_required
 def basket():
-    if current_user.is_expert():
+    if is_expert_user(current_user):
         return redirect(url_for('views.expert'))
-    if current_user.is_manager():
+    if is_manager_user(current_user):
         return redirect(url_for('views.manager'))
     paying_items = Item.query.filter(Item.status == ItemStatus.PAYING.value, Item.winner_id == current_user.id).all()
     return render_template('basket.html', paying_items = paying_items)
@@ -483,9 +495,9 @@ def my_watched():
 @views.route('/payment_interface/<int:item_id>', methods=['GET', 'POST'])
 @login_required
 def payment_interface(item_id):
-    if current_user.is_expert():
+    if is_expert_user(current_user):
         return redirect(url_for('views.expert'))
-    if current_user.is_manager():
+    if is_manager_user(current_user):
         return redirect(url_for('views.manager'))
     form = PaymentForm()
     item = Item.query.get_or_404(item_id)
@@ -587,9 +599,9 @@ def unwatch_item(item_id):
 @views.route('/watching')
 @login_required
 def watching():
-    if current_user.is_expert():
+    if is_expert_user(current_user):
         return redirect(url_for('views.expert'))
-    if current_user.is_manager():
+    if is_manager_user(current_user):
         return redirect(url_for('views.manager'))
     items = current_user.watched_items.all()
     return render_template('watching.html', items=items)
@@ -597,9 +609,9 @@ def watching():
 @views.route('/account', methods=['GET', 'POST'])
 @login_required
 def account():
-    if current_user.is_expert():
+    if is_expert_user(current_user):
         return redirect(url_for('views.expert'))
-    if current_user.is_manager():
+    if is_manager_user(current_user):
         return redirect(url_for('views.manager'))
     form = AccountUpdateForm(current_user)
     
@@ -630,5 +642,8 @@ def account():
 @views.route('/expert_notifications', methods=['GET'])
 @login_required
 def expert_notifications():
+     if current_user.priority != UserPriority.EXPERT.value:
+        flash("Access denied.", "danger")
+        return redirect(url_for('views.home'))
      notifications = Notification.query.filter(Notification.user_id==current_user.id)
      return render_template('expert_notifications.html', notifications=notifications)
