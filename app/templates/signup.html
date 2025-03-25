@@ -4,6 +4,7 @@
   <div class="col-md-6">
     <h2>Sign Up</h2>
 
+
     <form method="POST">
       {{ form.hidden_tag() }}
 
@@ -18,24 +19,37 @@
       </div>
 
       <div class="form-group">
-        {{ form.username.label }}
-        {{ form.username(class="form-control", placeholder="Enter username") }}
+          {{ form.username.label }}
+          {{ form.username(class="form-control", placeholder="Enter username") }}
+          {% for error in form.username.errors %}
+              <small class="text-danger">{{ error }}</small>
+          {% endfor %}
       </div>
-
+      
       <div class="form-group">
-        {{ form.email.label }}
-        {{ form.email(class="form-control", placeholder="Enter email") }}
+          {{ form.email.label }}
+          {{ form.email(class="form-control", placeholder="Enter email") }}
+          {% for error in form.email.errors %}
+              <small class="text-danger">{{ error }}</small>
+          {% endfor %}
       </div>
-
+      
       <div class="form-group">
-        {{ form.password.label }}
-        {{ form.password(class="form-control", placeholder="Enter password") }}
+          {{ form.password.label }}
+          {{ form.password(class="form-control", placeholder="Enter password") }}
+          {% for error in form.password.errors %}
+              <small class="text-danger">{{ error }}</small>
+          {% endfor %}
       </div>
-
+      
       <div class="form-group">
-        {{ form.confirm_password.label }}
-        {{ form.confirm_password(class="form-control", placeholder="Confirm password") }}
+          {{ form.confirm_password.label }}
+          {{ form.confirm_password(class="form-control", placeholder="Confirm password") }}
+          {% for error in form.confirm_password.errors %}
+              <small class="text-danger">{{ error }}</small>
+          {% endfor %}
       </div>
+    
 
       <div class="form-group">
         {{ form.type.label }}
