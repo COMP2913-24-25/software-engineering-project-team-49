@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <h2>Manage user roles</h2>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Update Role</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.username }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                    {% if user.priority == UserPriority.GENERAL_USER.value %} User
+                    {% elif user.priority == UserPriority.EXPERT.value %} Expert
+                    {% elif user.priority == UserPriority.MANAGER.value %} Manager
+                    {% endif %}
+                </td>
+                <td>
+                    <form method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"> 
+                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                        <select name="new_role" class="form-control">
+                            <option value="{{ UserPriority.GENERAL_USER.value }}" {% if user.priority == UserPriority.GENERAL_USER.value %}selected{% endif %}>User</option>
+                            <option value="{{ UserPriority.EXPERT.value }}" {% if user.priority == UserPriority.EXPERT.value %}selected{% endif %}>Expert</option>
+                            <option value="{{ UserPriority.MANAGER.value }}" {% if user.priority == UserPriority.MANAGER.value %}selected{% endif %}>Manager</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary mt-2">Update</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

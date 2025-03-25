@@ -398,6 +398,23 @@ def weekly_costs():
     percentage_earnings = (total_fees / total_revenue * 100) if total_revenue else 0
     return render_template('weekly_costs.html', payments=payments, total_revenue=total_revenue, total_fees=total_fees, percentage_earnings=percentage_earnings)
 
+@views.route('/manage_users', methods=['GET','POST'])
+@login_required
+def manage_users():
+    user_id = request.form.get('user_id')
+    new_role = request.form.get('new_role')
+    users = User.query.all()
+    if request.method == "POST":
+        user = User.query.filter_by(id=user_id).first()
+        if user:
+            user.priority = int(new_role)
+            db.session.commit()
+            flash("Successfully updated role!", "success")
+        else:
+            flash("No users found", "danger")
+        return redirect(url_for("views.manager"))
+    return render_template('manage_users.html', users=users, UserPriority=UserPriority)
+
 @views.route('/basket', methods=['GET', 'POST'])
 @login_required
 def basket():
