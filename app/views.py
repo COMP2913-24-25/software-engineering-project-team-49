@@ -559,3 +559,9 @@ def account():
         form.email.data = current_user.email
     
     return render_template('account.html', form=form)
+
+@views.route('/expert_notifications', methods=['GET'])
+@login_required
+def expert_notifications():
+     notifications = Notification.query.filter(Notification.user_id==current_user.id)
+     return render_template('expert_notifications.html', notifications=notifications)
