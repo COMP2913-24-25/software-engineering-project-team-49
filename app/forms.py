@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import MultipleFileField, FileAllowed
 from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAreaField, DecimalField, TimeField, BooleanField
 from wtforms_sqlalchemy.fields import QuerySelectMultipleField
-from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange
+from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange, Email, Regexp
 from .models import User, Category
 from datetime import datetime, timedelta
 
@@ -10,7 +10,7 @@ class SignUpForm(FlaskForm):
     first_name= StringField('first name')
     last_name = StringField('last name')
     username = StringField('Username', validators=[DataRequired(), Length(min=3, max=20, message="Username should be between 3 and 20 characters.")])
-    email = StringField('email', validators=[DataRequired(), Length(min = 3, max=100, message="Email should be between 3 and 100 characters")])
+    email = StringField('email', validators=[DataRequired(), Email(message="Invalid email address"), Regexp(r'^[^@]+@[^@]+\.[^@]+$', message="Invalid email format"), Length(min = 3, max=100, message="Email should be between 3 and 100 characters")])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6, message="Password should be minimum 6 characters.")])
     confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password', message="Passwords should match.")])
     type = SelectField('Are you a user, expert or manager?', choices=[('1', 'User'), ('2', 'Expert'), ('3', 'Manager')])
