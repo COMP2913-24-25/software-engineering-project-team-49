@@ -267,10 +267,14 @@ def expert():
     if current_user.priority != UserPriority.EXPERT.value:
         flash("Access denied.", "danger")
         return redirect(url_for('views.home'))
+    from sqlalchemy import or_
 
     pending_items = Item.query.join(AuthenticationRequest).filter(
         AuthenticationRequest.expert_id == current_user.id,
-        AuthenticationRequest.status == AuthenticationStatus.PENDING.value
+        or_(
+        AuthenticationRequest.status == AuthenticationStatus.PENDING.value,
+        AuthenticationRequest.status == AuthenticationStatus.SECOND_OPINION.value
+        )
     ).all()
 
     expert_categories = [category.category for category in current_user.expertise]
@@ -386,6 +390,17 @@ def authenticate_item(item_id):
             db.session.commit()
             flash('Item marked as unknown', 'info')
             return redirect(url_for('views.expert'))
+        elif action == "second_opinion":
+            authentication.status = AuthenticationStatus.SECOND_OPINION.value
+            notification = Notification(user_id=item.seller_id,
+                                        item_id=item.id,
+                                        type="authentication",
+                                        message="Your item has been requested for a second opinion",
+                                        created_at=datetime.utcnow()
+                                        )
+            db.session.add(notification)
+            db.session.commit()
+            return redirect(url_for('views.assign_expert', item_id=item_id))
     return render_template('authenticate_item.html', item=item, form=form)
 
 @views.route('/manager', methods=['GET', 'POST'])
@@ -415,7 +430,7 @@ def manager():
 @views.route('/assign_expert/<int:item_id>', methods=['GET', 'POST'])
 @login_required
 def assign_expert(item_id):
-    if current_user.priority != UserPriority.MANAGER.value:
+    if current_user.priority not in [UserPriority.EXPERT.value, UserPriority.MANAGER.value]:
         flash("Access denied.", "danger")
         return redirect(url_for('views.home'))
     item = Item.query.get_or_404(item_id)
@@ -446,7 +461,10 @@ def assign_expert(item_id):
         db.session.add(notification)
         db.session.commit()
         flash(f"Expert assigned successfully!", "success")
-        return redirect(url_for('views.manager'))
+        if current_user.priority == UserPriority.EXPERT.value:
+            return redirect(url_for('views.expert'))
+        else:
+            return redirect(url_for('views.manager'))
     return render_template('assign_expert.html', form=form, item=item)
 
 @views.route('/configure_fees', methods=['GET', 'POST'])
