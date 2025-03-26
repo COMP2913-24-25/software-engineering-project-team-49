@@ -4,7 +4,7 @@ from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAr
 from wtforms_sqlalchemy.fields import QuerySelectMultipleField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange, Email, Regexp
 from .models import User, Category
-from datetime import datetime, timedelta
+from datetime import datetime
 
 class SignUpForm(FlaskForm):
     first_name= StringField('first name')
@@ -108,6 +108,10 @@ class ConfigFeeForm(FlaskForm):
     default_fee = DecimalField('Default fee percentage is 1%', validators=[DataRequired(), NumberRange(min=0, max=100)], places=2)
     expert_fee = DecimalField('Expert Approved fee percenatge is 5%', validators=[DataRequired(), NumberRange(min=0, max=100)], places=2)
     submit = SubmitField('Submit')
+
+class AuthenticationChatForm(FlaskForm):
+    message = TextAreaField("Message", validators=[DataRequired()])
+    submit = SubmitField("Send")
 
 class AccountUpdateForm(FlaskForm):
     first_name = StringField('First Name', validators=[Length(max=64)])

@@ -5,11 +5,13 @@ views = Blueprint("views", __name__)
 from app import models, db
 from flask import render_template, flash, request, redirect, url_for
 from flask_login import login_user, current_user, login_required, logout_user
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
-from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm, PaymentForm, ConfigFeeForm, AccountUpdateForm
-from .models import User, Item, ItemStatus,ItemImage, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus, Payment, SystemConfiguration
-import os
+from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm, PaymentForm, ConfigFeeForm, AccountUpdateForm, AuthenticationChatForm
+from .models import User, Item, ItemStatus, ItemImage, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus, Payment, SystemConfiguration
+import os, io, base64
+import matplotlib.pyplot as plt
+from collections import defaultdict
 from werkzeug.utils import secure_filename
 
 UPLOAD_FOLDER = 'app/static/uploads'
@@ -34,9 +36,9 @@ def is_manager_user(user):
 @views.route('/welcome')
 def welcome():
     if is_expert_user(current_user):
-        return redirect(url_for('views.expert'))
+        return redirect(url_for('views.expert')) # Redirects to expert home page if user is expert
     if is_manager_user(current_user):
-        return redirect(url_for('views.manager'))
+        return redirect(url_for('views.manager')) # Redirects to manager home page if user is manager
     return render_template('welcome.html')
 
 @views.route('/signup', methods=['GET', 'POST'])
@@ -45,50 +47,50 @@ def signup():
     if form.validate_on_submit():
         existing_user = User.query.filter(
             (User.username == form.username.data) | (User.email == form.email.data)
-        ).first()
+        ).first() # Check if the username or email is already taken
         if existing_user:
             flash("Username or email already in use.", "danger")
-            return redirect(url_for('views.signup'))
+            return redirect(url_for('views.signup')) # User will need to input details again
 
-        if form.type.data == '1':
+        if form.type.data == '1': # General User
             new_user = User(first_name=form.first_name.data, last_name=form.last_name.data, username=form.username.data, email=form.email.data)
             new_user.set_password(form.password.data)
             db.session.add(new_user)
             db.session.commit()
-        elif form.type.data == '2':
+        elif form.type.data == '2': # Expert
             new_user = User(first_name=form.first_name.data, last_name=form.last_name.data, username=form.username.data, email=form.email.data, priority=UserPriority.EXPERT.value)
             new_user.set_password(form.password.data)
             db.session.add(new_user)
             db.session.commit()
-        else:
+        else: # Manager
             new_user = User(first_name=form.first_name.data, last_name=form.last_name.data, username=form.username.data, email=form.email.data, priority=UserPriority.MANAGER.value)
             new_user.set_password(form.password.data)
             db.session.add(new_user)
             db.session.commit()
         flash('Account successfully created! You will now be redirected to the login page!', 'success')
-        return redirect(url_for('views.login'))
+        return redirect(url_for('views.login')) # Automatically redirect to login page
     return render_template('signup.html', form=form)
 
 @views.route('/login', methods=['GET', 'POST'])
 def login():
     form = LogInForm()
     if form.validate_on_submit():
-        User = models.User.query.filter_by(username=form.username.data).first()
-        if User and User.check_password(form.password.data):
-            if User.is_manager():
+        User = models.User.query.filter_by(username=form.username.data).first() # Find the user by username
+        if User and User.check_password(form.password.data): # Checks if the user exists and password matches
+            if User.is_manager(): # If user is manager, redirect to manager homepage
                 flash('Successfully Logged In!')
                 login_user(User)
                 return redirect(url_for('views.manager'))
-            elif User.is_expert():
+            elif User.is_expert(): # If user is expert, redirect to expert homepage
                 flash('Successfully Logged In!')
                 login_user(User)
                 return redirect(url_for('views.expert'))
-            else:
+            else: # If user is general user, redirect to user homepage
                 flash('Successfully Logged In!', 'success')
                 login_user(User)
                 return redirect(url_for('views.home'))
         else:
-            flash("Invalid Username or Password. Please try again.", 'danger')
+            flash("Invalid Username or Password. Please try again.", 'danger') # Invalid login details
     return render_template('login.html', form=form)
 
 @views.route('/logout', methods=['GET','POST'])
@@ -259,31 +261,43 @@ def notifications():
     notifications = Notification.query.filter(Notification.user_id==current_user.id).all()
     return render_template('notifications.html', notifications=notifications)
 
+@views.route('/my_items', methods=['GET', 'POST'])
+@login_required
+def my_items():
+    items = Item.query.filter_by(seller_id=current_user.id).all()
+    for item in items:
+        item.authentication_request = AuthenticationRequest.query.filter_by(item_id=item.id).first()
+    return render_template('my_items.html', items=items)
+
 @views.route('/expert', methods=['GET', 'POST'])
 @login_required
 def expert():
-    if current_user.priority != UserPriority.EXPERT.value:
+    if current_user.priority != UserPriority.EXPERT.value: # Ensure only experts can access page
         flash("Access denied.", "danger")
         return redirect(url_for('views.home'))
-
+    from sqlalchemy import or_
+    # Query only items pending or second opinion authentication requests assigned to the current expert
     pending_items = Item.query.join(AuthenticationRequest).filter(
         AuthenticationRequest.expert_id == current_user.id,
-        AuthenticationRequest.status == AuthenticationStatus.PENDING.value
+        or_(
+        AuthenticationRequest.status == AuthenticationStatus.PENDING.value,
+        AuthenticationRequest.status == AuthenticationStatus.SECOND_OPINION.value
+        )
     ).all()
-
+    # Get expert's categories of expertise
     expert_categories = [category.category for category in current_user.expertise]
     return render_template('expert.html', items=pending_items, categories=expert_categories)
 
 @views.route('/select_availability', methods=['GET', 'POST'])
 @login_required
 def select_availability():
-    if current_user.priority != UserPriority.EXPERT.value:
+    if current_user.priority != UserPriority.EXPERT.value: # Ensure only experts can access page
         flash("Access denied.", "danger")
         return redirect(url_for('views.home'))
-    form = AvailabilityForm()
+    form = AvailabilityForm() # Initialize availability and unavilability forms
     unavailable = UnavailableForm()
-    if 'available_submit' in request.form:
-        ExpertAvailability.query.filter_by(user_id=current_user.id).delete()
+    if 'available_submit' in request.form:  # Handle availablity schedule submission
+        ExpertAvailability.query.filter_by(user_id=current_user.id).delete() # Clear existing availability
         availability_data = {
             "Sunday": (form.sunday_start.data, form.sunday_end.data),
             "Monday": (form.monday_start.data, form.monday_end.data),
@@ -293,7 +307,7 @@ def select_availability():
             "Friday": (form.friday_start.data, form.friday_end.data),
             "Saturday": (form.saturday_start.data, form.saturday_end.data),
         }
-        for day, (start, end) in availability_data.items():
+        for day, (start, end) in availability_data.items(): # Add new availability
             new_availability = ExpertAvailability(user_id=current_user.id,
                                                          day_of_week=day,
                                                          start_time = datetime.combine(datetime.today(), start),
@@ -303,9 +317,9 @@ def select_availability():
             db.session.add(new_availability)
             db.session.commit()
         flash("Availability Added!", "success")
-        return redirect(url_for('views.expert'))
-    elif 'unavailable_submit' in request.form:
-        ExpertAvailability.query.filter_by(user_id=current_user.id).delete()
+        return redirect(url_for('views.expert')) # Redirect to expert homepage
+    elif 'unavailable_submit' in request.form: # Handle unavailablity schedule submission
+        ExpertAvailability.query.filter_by(user_id=current_user.id).delete() # Clear existing availability
         availability_data = {
             "Sunday": ("08:00", "20:00"),
             "Monday": ("08:00", "20:00"),
@@ -315,7 +329,7 @@ def select_availability():
             "Friday": ("08:00", "20:00"),
             "Saturday": ("08:00", "20:00"),
         }
-        for day, (start, end) in availability_data.items():
+        for day, (start, end) in availability_data.items(): # Add new unavailability
             new_availability = ExpertAvailability(user_id=current_user.id,
                                                          day_of_week=day,
                                                          start_time = datetime.combine(datetime.today(), datetime.strptime(start, "%H:%M").time()),
@@ -325,115 +339,181 @@ def select_availability():
             db.session.add(new_availability)
             db.session.commit()
         flash("Availability Added!", "success")
-        return redirect(url_for('views.expert'))
+        return redirect(url_for('views.expert')) # Redirect to expert homepage
     return render_template('select_availability.html', form=form, unavailable=unavailable)
 
 @views.route('/select_category', methods=['GET', 'POST'])
 @login_required
 def select_category():
-    if current_user.priority != UserPriority.EXPERT.value:
+    if current_user.priority != UserPriority.EXPERT.value: # Ensure only experts can access page
         flash("Access denied.", "danger")
         return redirect(url_for('views.home'))
     form = CategoryForm()
     if form.validate_on_submit():
-        ExpertCategory.query.filter_by(user_id=current_user.id).delete()
-        for category in form.expert_categories.data:
+        ExpertCategory.query.filter_by(user_id=current_user.id).delete() # Clear existing categories
+        for category in form.expert_categories.data: # Add selected categories
             expertise = ExpertCategory(user_id=current_user.id, category=category.name)
             db.session.add(expertise)
         db.session.commit()
         flash('Expertise preferences updated!')
-        return redirect(url_for('views.expert'))
+        return redirect(url_for('views.expert')) # Redirect to expert homepage
     return render_template('select_category.html', form=form)
 
 @views.route('/authenticate_item/<int:item_id>', methods=['GET','POST'])
 @login_required
 def authenticate_item(item_id):
-    if current_user.priority != UserPriority.EXPERT.value:
+    if current_user.priority != UserPriority.EXPERT.value: # Ensure only experts can access page
         flash("Access denied.", "danger")
         return redirect(url_for('views.home'))
-    item = Item.query.get_or_404(item_id)
-    authentication = AuthenticationRequest.query.filter_by(item_id=item.id).first()
-    action = request.form.get('action')
+    item = Item.query.get_or_404(item_id)  # Query item by ID
+    authentication = AuthenticationRequest.query.filter_by(item_id=item.id).first() # Query authentication request for the item
+    action = request.form.get('action') # Get action from form button
     form = AuthenticateForm()
     if form.validate_on_submit():
-        if action == 'approve':
+        if action == 'approve': # If item is approved
             authentication.status = AuthenticationStatus.APPROVED.value
             item.status = ItemStatus.ACTIVE.value
             item.is_authenticated = True
+            notification = Notification(user_id=item.seller_id,
+                                        item_id=item.id,
+                                        type="authentication",
+                                        message="Your item has been marked as genuine",
+                                        created_at=datetime.utcnow()
+                                        )
+            db.session.add(notification)
             db.session.commit()
             flash('Item marked as genuine', 'success')
-            return redirect(url_for('views.expert'))
-        elif action == 'reject':
+            return redirect(url_for('views.expert')) # Redirect to expert homepage
+        elif action == 'reject': # If item is rejected
             authentication.status = AuthenticationStatus.REJECTED.value
             item.status = ItemStatus.ACTIVE.value
             item.is_authenticated = False
+            notification = Notification(user_id=item.seller_id,
+                                        item_id=item.id,
+                                        type="authentication",
+                                        message="Your item has been marked as not genuine",
+                                        created_at=datetime.utcnow()
+                                        )
+            db.session.add(notification)
             db.session.commit()
             flash('Item marked as unknown', 'info')
-            return redirect(url_for('views.expert'))
+            return redirect(url_for('views.expert')) # Redirect to expert homepage
+        elif action == "second_opinion": # If second opinion is requested
+            authentication.status = AuthenticationStatus.SECOND_OPINION.value
+            notification = Notification(user_id=item.seller_id,
+                                        item_id=item.id,
+                                        type="authentication",
+                                        message="Your item has been requested for a second opinion",
+                                        created_at=datetime.utcnow()
+                                        )
+            db.session.add(notification)
+            db.session.commit()
+            return redirect(url_for('views.assign_expert', item_id=item_id)) # Redirect to expert homepage
+        elif action == "chat": # If expert wants to open dialogue with user
+            return redirect(url_for('views.authentication_chat', authentication_id=authentication.id)) # Redirect to expert chat with seller
     return render_template('authenticate_item.html', item=item, form=form)
+
+@views.route('/authentication_chat/<int:authentication_id>', methods=['GET', 'POST'])
+@login_required
+def authentication_chat(authentication_id):
+    authentication = AuthenticationRequest.query.get_or_404(authentication_id) # Get authentication request by ID
+    if current_user.id not in [authentication.expert_id, authentication.item.seller_id]: # Ensure only expert/seller can access page
+        flash("Access denied.", "danger")
+        return redirect(url_for('views.home'))
+    messages = AuthenticationMessage.query.filter_by(request_id=authentication_id).order_by(AuthenticationMessage.created_at.asc()).all() # Fetch all messages for this request ordered by creation date
+    form = AuthenticationChatForm()
+    if form.validate_on_submit(): # Create new message for authentication request
+        new_message = AuthenticationMessage(request_id=authentication_id,
+                                            sender_id=current_user.id,
+                                            message=form.message.data,
+                                            created_at=datetime.utcnow()
+                                            ) # Create notification for user about new message
+        notification = Notification(user_id=authentication.requester_id,
+                                    item_id=authentication.item_id,
+                                    type="authentication",
+                                    message="You have received a message from your expert authentication! Please check the chat for more info",
+                                    created_at=datetime.utcnow()
+                                    )
+        db.session.add(new_message)
+        db.session.add(notification)
+        db.session.commit() # Save to database
+        flash("Message Successfully Sent!", "success")
+        return redirect(url_for('views.authentication_chat', authentication_id=authentication_id))
+    return render_template('authentication_chat.html', form=form, messages=messages, authentication=authentication)
 
 @views.route('/manager', methods=['GET', 'POST'])
 @login_required
 def manager():
-    if current_user.priority != UserPriority.MANAGER.value:
+    if current_user.priority != UserPriority.MANAGER.value: # Ensure only managers can access page
         flash("Access denied.", "danger")
         return redirect(url_for('views.home'))
-    pending_items = Item.query.filter_by(status=ItemStatus.PENDING.value).all()
-    experts = User.query.filter_by(priority=UserPriority.EXPERT.value).all()
-    # Create a dictionary mapping expert IDs to their categories
+    pending_items = Item.query.filter_by(status=ItemStatus.PENDING.value).all() # Fetch all items that are pending
+    experts = User.query.filter_by(priority=UserPriority.EXPERT.value).all() # Fetch all experts
+    # Create a dictionary mapping expert IDs to their categories then create seperate lists for available and soon to be available experts
     expert_categories = {
         expert.id: [category.category for category in expert.expertise] for expert in experts
     }
-    return render_template('manager.html', items=pending_items, experts=experts, expert_categories=expert_categories)
+    available_experts = User.query.join(ExpertAvailability).filter(User.priority == UserPriority.EXPERT.value).filter(ExpertAvailability.start_time <= datetime.utcnow()).filter(ExpertAvailability.end_time >= datetime.utcnow()).all()
+    available_categories = {
+        expert.id: [category.category for category in expert.expertise] for expert in available_experts
+    }
+    upcoming_experts = User.query.join(ExpertAvailability).filter(User.priority == UserPriority.EXPERT.value).filter(ExpertAvailability.start_time > datetime.utcnow()).filter(ExpertAvailability.start_time <= datetime.utcnow() + timedelta(days=7)).all()
+    upcoming_categories = {
+        expert.id: [category.category for category in expert.expertise] for expert in upcoming_experts
+    }
+    return render_template('manager.html', items=pending_items, experts=experts, expert_categories=expert_categories, available_experts=available_experts, upcoming_experts=upcoming_experts, available_categories=available_categories, upcoming_categories=upcoming_categories)
 
 @views.route('/assign_expert/<int:item_id>', methods=['GET', 'POST'])
 @login_required
 def assign_expert(item_id):
-    if current_user.priority != UserPriority.MANAGER.value:
+    if current_user.priority not in [UserPriority.EXPERT.value, UserPriority.MANAGER.value]: # Ensure only expert/manager can access page
         flash("Access denied.", "danger")
         return redirect(url_for('views.home'))
-    item = Item.query.get_or_404(item_id)
+    item = Item.query.get_or_404(item_id) # Fetch the item by ID
     from sqlalchemy import func
-
+    # Fetch experts who can authenticate the item based on category
     experts = User.query.join(ExpertCategory).filter(
         func.lower(ExpertCategory.category) == func.lower(item.category_rel.name), 
         User.priority == UserPriority.EXPERT.value
     ).all()
     print(f"Eligible experts for category {item.category_id}: {experts}")
     form = AssignExpertForm()
-    form.expert.choices = [(expert.id, expert.username) for expert in experts]
+    form.expert.choices = [(expert.id, expert.username) for expert in experts]  # Show experts in form
     if form.validate_on_submit():
-        authentication = AuthenticationRequest.query.filter_by(item_id=item.id).first()
-        authentication.expert_id = form.expert.data
+        authentication = AuthenticationRequest.query.filter_by(item_id=item.id).first() # Fetch authentication request for item
+        authentication.expert_id = form.expert.data # Assign expert to authentication request
         authentication_message = AuthenticationMessage(request_id=authentication.id,
                                                        sender_id=current_user.id,
                                                        message="Please review this item: " + item.name,
                                                        created_at=datetime.utcnow()
-                                                       )
+                                                       ) # Create a message notifying the expert
         notification = Notification(user_id=form.expert.data, 
                                     item_id=item.id,
                                     type="authentication",
                                     message="Please review this item: " + item.name,
                                     created_at=datetime.utcnow()
-                                    )
+                                    ) # Create a notification for the expert
         db.session.add(authentication_message)
         db.session.add(notification)
-        db.session.commit()
+        db.session.commit() # Save to database
         flash(f"Expert assigned successfully!", "success")
-        return redirect(url_for('views.manager'))
+        if current_user.priority == UserPriority.EXPERT.value: # Redirect to expert or manager homepage based on current user's role
+            return redirect(url_for('views.expert'))
+        else:
+            return redirect(url_for('views.manager'))
     return render_template('assign_expert.html', form=form, item=item)
 
 @views.route('/configure_fees', methods=['GET', 'POST'])
 def configure_fees():
-    if current_user.priority != UserPriority.MANAGER.value:
+    if current_user.priority != UserPriority.MANAGER.value: # Ensure only managers can access page
         flash("Access denied.", "danger")
         return redirect(url_for('views.home'))
     form = ConfigFeeForm()
-    if form.validate_on_submit():
+    if form.validate_on_submit(): # Convert fee percentages from form to decimal
         default_fee = form.default_fee.data / 100
         expert_fee = form.expert_fee.data / 100
         for key, value in [('regular_fee_percentage', default_fee), ('authenticated_fee_percentage', expert_fee)]:
-            config = SystemConfiguration.query.filter_by(key=key).first()
+            config = SystemConfiguration.query.filter_by(key=key).first() # Update system configuration with the new fee values
             if config:
                 config.value = str(value)
             else:
@@ -442,48 +522,70 @@ def configure_fees():
         flash("Fee percentages updated successfully", "success")
         return redirect(url_for('views.manager'))
     config = SystemConfiguration.query.filter_by(key='regular_fee_percentage').first()
-    if config is not None:
+    if config is not None: # Get current fee values from system configuration and populate form
         form.default_fee.data = float(config.value) * 100
     else:
-        form.default_fee.data = 1
+        form.default_fee.data = 1 # If config is empty
     config = SystemConfiguration.query.filter_by(key='authenticated_fee_percentage').first()
     if config is not None:
         form.expert_fee.data = float(config.value) * 100
     else:
-        form.expert_fee.data = 5
+        form.expert_fee.data = 5 # If config is empty
     return render_template('configure_fees.html', form=form)
 
 @views.route('/weekly_costs', methods=['GET'])
 @login_required
 def weekly_costs():
-    if current_user.priority != UserPriority.MANAGER.value:
+    if current_user.priority != UserPriority.MANAGER.value: # Ensure only managers can access page
         flash("Access denied.", "danger")
         return redirect(url_for('views.home'))
-    one_week_ago = datetime.utcnow() - timedelta(days=7)
-    payments = Payment.query.filter(Payment.status=='completed', Payment.completed_at >= one_week_ago).all()
-    total_revenue = sum(payment.amount for payment in payments)
+    one_week_ago = datetime.utcnow() - timedelta(days=7) # Calculate one week ago
+    payments = Payment.query.filter(Payment.status=='completed', Payment.completed_at >= one_week_ago).all() # Fetch all completed payments from past week
+    daily_revenue = defaultdict(float) # Create dictionaries for daily revenue and fees
+    daily_fees  = defaultdict(float)
+    for payment in payments: # Iterate through the payments and calculate total revenue and fees per day
+        string_date = payment.completed_at.strftime('%Y-%m-%d')
+        daily_revenue[string_date] += payment.amount
+        daily_fees[string_date] += payment.fee_amount
+    days = [(one_week_ago + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)] # Generate list of days in past week
+    revenues = [daily_revenue[day] for day in days] # Put data in arrays for plotting
+    fees = [daily_fees[day] for day in days]
+    plt.figure(figsize=(8,4)) # Create the graph for past week's revenue and earnings
+    plt.plot(days, revenues, marker='o', linestyle='-', label="Total Revenue (£)")
+    plt.plot(days, fees, marker='o', linestyle='-', label="Total Earnings (£)", color='Blue')
+    plt.xticks(rotation=45)
+    plt.xlabel("Date")
+    plt.ylabel("Amount (£)")
+    plt.title("Revenue and earnings in the past week")
+    plt.legend()
+    plt.tight_layout()
+    img = io.BytesIO() # Save plot to a BytesIO stream
+    plt.savefig(img, format='png')
+    img.seek(0)
+    plot_path = base64.b64encode(img.getvalue()).decode() # Convert image to base64 encoding for rendering in template
+    total_revenue = sum(payment.amount for payment in payments) # Calculate total revenue, fees and percentage earnings
     total_fees = sum(payment.fee_amount for payment in payments)
     percentage_earnings = (total_fees / total_revenue * 100) if total_revenue else 0
-    return render_template('weekly_costs.html', payments=payments, total_revenue=total_revenue, total_fees=total_fees, percentage_earnings=percentage_earnings)
+    return render_template('weekly_costs.html', payments=payments, total_revenue=total_revenue, total_fees=total_fees, percentage_earnings=percentage_earnings, plot_path=plot_path)
 
 @views.route('/manage_users', methods=['GET','POST'])
 @login_required
 def manage_users():
-    if current_user.priority != UserPriority.MANAGER.value:
+    if current_user.priority != UserPriority.MANAGER.value: # Ensure only managers can access page
         flash("Access denied.", "danger")
         return redirect(url_for('views.home'))
-    user_id = request.form.get('user_id')
+    user_id = request.form.get('user_id') # Retreive form data
     new_role = request.form.get('new_role')
-    users = User.query.all()
+    users = User.query.all() # Get all users
     if request.method == "POST":
         user = User.query.filter_by(id=user_id).first()
-        if user:
+        if user: # If user found, update user's role
             user.priority = int(new_role)
             db.session.commit()
             flash("Successfully updated role!", "success")
         else:
             flash("No users found", "danger")
-        return redirect(url_for("views.manager"))
+        return redirect(url_for("views.manager")) # Redirect to manager homepage
     return render_template('manage_users.html', users=users, UserPriority=UserPriority)
 
 @views.route('/basket', methods=['GET', 'POST'])

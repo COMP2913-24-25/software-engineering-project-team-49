@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>My Items for Sale</h2>
+{% if items %}
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Price</th>
+                <th>Chat with Expert</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.category_rel.name }}</td>
+                    <td>{{ item.status }}</td>
+                    <td>£{{ item.current_price }}</td>
+                    <td>
+                        {% if item.authentication_request %}
+                            <a href="{{ url_for('views.authentication_chat', authentication_id=item.authentication_request.id) }}" class="btn btn-primary">Chat</a>
+                        {% else %}
+                            <span class="text-muted">No authentication request</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No items found.</p>
+{% endif %}
+{% endblock %}
