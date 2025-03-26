@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-5">
+    <h2>My Auctions</h2>
+
+    <h3>Pending Auctions</h3>
+    {% if pending_auctions %}
+        {% for item in pending_auctions %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">{{ item.name }}</h5>
+                    <p class="card-text">{{ item.description }}</p>
+                    <p class="text-muted">Minimum Price: ${{ item.minimum_price }}</p>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No pending auctions.</p>
+    {% endif %}
+
+    <h3>Active Auctions</h3>
+    {% if active_auctions %}
+        {% for item in active_auctions %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">{{ item.name }}</h5>
+                    <p class="card-text">{{ item.description }}</p>
+                    <p class="text-muted">Current Price: ${{ item.current_price }}</p>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No active auctions.</p>
+    {% endif %}
+
+    <h3>Sold Auctions</h3>
+    {% if sold_auctions %}
+        {% for item in sold_auctions %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">{{ item.name }}</h5>
+                    <p class="card-text">{{ item.description }}</p>
+                    <p class="text-muted">Sold for: ${{ item.current_price }}</p>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No sold auctions.</p>
+    {% endif %}
+
+    <h3>Expired Auctions</h3>
+    {% if expired_auctions %}
+        {% for item in expired_auctions %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">{{ item.name }}</h5>
+                    <p class="card-text">{{ item.description }}</p>
+                    <p class="text-muted">Starting Price: ${{ item.minimum_price }}</p>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No expired auctions.</p>
+    {% endif %}
+
+</div>
+
+{% endblock %}

@@ -722,3 +722,25 @@ def manager_account():
         form.email.data = current_user.email
     
     return render_template('manager_account.html', form=form)
+
+@views.route('.my_auctions', methods=['GET', 'POST'])
+@login_required
+def my_auctions():
+    if is_expert_user(current_user):
+        return redirect(url_for('views.expert'))
+    if is_manager_user(current_user):
+        return redirect(url_for('views.manager'))
+    
+    my_auctions = current_user.items_sold.all()
+    pending_auctions = [item for item in my_auctions if item.status == ItemStatus.PENDING.value]
+    active_auctions = [item for item in my_auctions if item.status == ItemStatus.ACTIVE.value]
+    sold_auctions = [item for item in my_auctions if item.status == ItemStatus.SOLD.value]
+    expired_auctions = [item for item in my_auctions if item.status == ItemStatus.EXPIRED.value]
+
+    return render_template(
+        'my_account.html', 
+        pending_auctions=pending_auctions,
+        active_auctions=active_auctions,
+        sold_auctions=sold_auctions,
+        expired_auctions=expired_auctions
+    )
