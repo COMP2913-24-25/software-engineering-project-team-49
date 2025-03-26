@@ -4,7 +4,7 @@
 <div class="container mt-5">
     <h2>Notifications</h2>
     
-    {% if notifications %}
+    {% if notifications | length > 0 %}
     {% for notification in notifications %}
     <div class="row">
         <div class="col-md-8 offset-md-2">
@@ -19,8 +19,8 @@
     </div>
     {% endfor %}
     {% else %}
-    <p>No new notifications.</p>
+    <p class="text-danger"><strong>No new notifications yet.</strong></p>
     {% endif %}
-</div>
+</ >
 
 {% endblock %}

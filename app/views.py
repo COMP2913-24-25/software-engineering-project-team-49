@@ -258,7 +258,7 @@ def notifications():
         return redirect(url_for('views.expert'))
     if is_manager_user(current_user):
         return redirect(url_for('views.manager'))
-    notifications = Notification.query.filter(Notification.user_id==current_user.id)
+    notifications = Notification.query.filter(Notification.user_id==current_user.id).all()
     return render_template('notifications.html', notifications=notifications)
 
 @views.route('/my_items', methods=['GET', 'POST'])
@@ -758,7 +758,7 @@ def expert_notifications():
      if current_user.priority != UserPriority.EXPERT.value:
         flash("Access denied.", "danger")
         return redirect(url_for('views.home'))
-     notifications = Notification.query.filter(Notification.user_id==current_user.id)
+     notifications = Notification.query.filter(Notification.user_id==current_user.id).all()
      return render_template('expert_notifications.html', notifications=notifications)
 
 @views.route('/expert_account', methods=['GET', 'POST'])
