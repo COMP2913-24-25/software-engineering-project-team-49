@@ -22,9 +22,10 @@ def check_auctions(app):
                 now = datetime.utcnow()
 
                 from app.models import db, Item, Bid, Notification, ItemStatus
+                from sqlalchemy import or_
 
                 # Find items whose auction has ended but still marked as ACTIVE
-                expired_items = Item.query.filter(Item.end_time <= now, Item.status == ItemStatus.ACTIVE.value).all()
+                expired_items = Item.query.filter(Item.end_time <= now,or_(Item.status == ItemStatus.ACTIVE.value, Item.status == ItemStatus.PENDING.value)).all()
 
                 for item in expired_items:
                     # Find the highest bid

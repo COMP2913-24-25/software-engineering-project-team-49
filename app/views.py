@@ -723,7 +723,7 @@ def manager_account():
     
     return render_template('manager_account.html', form=form)
 
-@views.route('.my_auctions', methods=['GET', 'POST'])
+@views.route('my_auctions', methods=['GET', 'POST'])
 @login_required
 def my_auctions():
     if is_expert_user(current_user):
