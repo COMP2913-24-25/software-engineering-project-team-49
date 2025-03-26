@@ -6,8 +6,8 @@ from app import models, db
 from flask import render_template, flash, request, redirect, url_for
 from flask_login import login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash
-from datetime import date, datetime, timedelta
-from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm, PaymentForm, ConfigFeeForm, AccountUpdateForm
+from datetime import datetime, timedelta
+from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm, PaymentForm, ConfigFeeForm, AccountUpdateForm, AuthenticationChatForm
 from .models import User, Item, ItemStatus, ItemImage, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus, Payment, SystemConfiguration
 import os, io, base64
 import matplotlib.pyplot as plt
@@ -261,6 +261,14 @@ def notifications():
     notifications = Notification.query.filter(Notification.user_id==current_user.id)
     return render_template('notifications.html', notifications=notifications)
 
+@views.route('/my_items', methods=['GET', 'POST'])
+@login_required
+def my_items():
+    items = Item.query.filter_by(seller_id=current_user.id).all()
+    for item in items:
+        item.authentication_request = AuthenticationRequest.query.filter_by(item_id=item.id).first()
+    return render_template('my_items.html', items=items)
+
 @views.route('/expert', methods=['GET', 'POST'])
 @login_required
 def expert():
@@ -401,7 +409,37 @@ def authenticate_item(item_id):
             db.session.add(notification)
             db.session.commit()
             return redirect(url_for('views.assign_expert', item_id=item_id))
+        elif action == "chat":
+            return redirect(url_for('views.authentication_chat', authentication_id=authentication.id))
     return render_template('authenticate_item.html', item=item, form=form)
+
+@views.route('/authentication_chat/<int:authentication_id>', methods=['GET', 'POST'])
+@login_required
+def authentication_chat(authentication_id):
+    authentication = AuthenticationRequest.query.get_or_404(authentication_id)
+    if current_user.id not in [authentication.expert_id, authentication.item.seller_id]:
+        flash("Access denied.", "danger")
+        return redirect(url_for('views.home'))
+    messages = AuthenticationMessage.query.filter_by(request_id=authentication_id).order_by(AuthenticationMessage.created_at.asc()).all()
+    form = AuthenticationChatForm()
+    if form.validate_on_submit():
+        new_message = AuthenticationMessage(request_id=authentication_id,
+                                            sender_id=current_user.id,
+                                            message=form.message.data,
+                                            created_at=datetime.utcnow()
+                                            )
+        notification = Notification(user_id=authentication.requester_id,
+                                    item_id=authentication.item_id,
+                                    type="authentication",
+                                    message="You have received a message from your expert authentication! Please check the chat for more info",
+                                    created_at=datetime.utcnow()
+                                    )
+        db.session.add(new_message)
+        db.session.add(notification)
+        db.session.commit()
+        flash("Message Successfully Sent!", "success")
+        return redirect(url_for('views.authentication_chat', authentication_id=authentication_id))
+    return render_template('authentication_chat.html', form=form, messages=messages, authentication=authentication)
 
 @views.route('/manager', methods=['GET', 'POST'])
 @login_required

@@ -109,6 +109,10 @@ class ConfigFeeForm(FlaskForm):
     expert_fee = DecimalField('Expert Approved fee percenatge is 5%', validators=[DataRequired(), NumberRange(min=0, max=100)], places=2)
     submit = SubmitField('Submit')
 
+class AuthenticationChatForm(FlaskForm):
+    message = TextAreaField("Message", validators=[DataRequired()])
+    submit = SubmitField("Send")
+
 class AccountUpdateForm(FlaskForm):
     first_name = StringField('First Name', validators=[Length(max=64)])
     last_name = StringField('Last Name', validators=[Length(max=64)])
