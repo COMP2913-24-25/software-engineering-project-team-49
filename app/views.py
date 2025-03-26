@@ -360,6 +360,13 @@ def authenticate_item(item_id):
             authentication.status = AuthenticationStatus.APPROVED.value
             item.status = ItemStatus.ACTIVE.value
             item.is_authenticated = True
+            notification = Notification(user_id=item.seller_id,
+                                        item_id=item.id,
+                                        type="authentication",
+                                        message="Your item has been marked as genuine",
+                                        created_at=datetime.utcnow()
+                                        )
+            db.session.add(notification)
             db.session.commit()
             flash('Item marked as genuine', 'success')
             return redirect(url_for('views.expert'))
@@ -367,6 +374,13 @@ def authenticate_item(item_id):
             authentication.status = AuthenticationStatus.REJECTED.value
             item.status = ItemStatus.ACTIVE.value
             item.is_authenticated = False
+            notification = Notification(user_id=item.seller_id,
+                                        item_id=item.id,
+                                        type="authentication",
+                                        message="Your item has been marked as not genuine",
+                                        created_at=datetime.utcnow()
+                                        )
+            db.session.add(notification)
             db.session.commit()
             flash('Item marked as unknown', 'info')
             return redirect(url_for('views.expert'))
