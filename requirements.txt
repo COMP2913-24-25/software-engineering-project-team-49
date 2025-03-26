@@ -35,3 +35,5 @@ Whoosh==2.7.4
 WTForms==3.2.1
 WTForms-SQLAlchemy==0.4.2
 email_validator==2.2.0
+matplotlib==3.10.1
+matplotlib-inline==0.1.7
