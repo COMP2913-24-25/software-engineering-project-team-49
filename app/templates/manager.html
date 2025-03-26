@@ -73,5 +73,75 @@
             <p>No experts found</p>
         {% endif %}
     </div>
+    <h2>Available Experts</h2>
+    <div class="table-responsive">
+        {% if available_experts %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Expert ID</th>
+                        <th>Expert Username</th>
+                        <th>Expert Name</th>
+                        <th>Email</th>
+                        <th>Categories</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expert in available_experts %}
+                        <tr>
+                            <td>{{ expert.id }}</td>
+                            <td>{{ expert.username }}</td>
+                            <td>{{ expert.first_name }} {{ expert.last_name }}</td>
+                            <td>{{ expert.email }}</td>
+                            <td>
+                                {% if available_categories[expert.id] %}
+                                    {{ available_categories[expert.id] | join(', ') }}
+                                {% else %}
+                                    No categories assigned
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No experts found</p>
+        {% endif %}
+    </div>
+    <h2>Experts who will soon be available</h2>
+    <div class="table-responsive">
+        {% if upcoming_experts %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Expert ID</th>
+                        <th>Expert Username</th>
+                        <th>Expert Name</th>
+                        <th>Email</th>
+                        <th>Categories</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expert in upcoming_experts %}
+                        <tr>
+                            <td>{{ expert.id }}</td>
+                            <td>{{ expert.username }}</td>
+                            <td>{{ expert.first_name }} {{ expert.last_name }}</td>
+                            <td>{{ expert.email }}</td>
+                            <td>
+                                {% if upcoming_categories[expert.id] %}
+                                    {{ upcoming_categories[expert.id] | join(', ') }}
+                                {% else %}
+                                    No categories assigned
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No experts found</p>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

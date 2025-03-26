@@ -5,10 +5,10 @@ views = Blueprint("views", __name__)
 from app import models, db
 from flask import render_template, flash, request, redirect, url_for
 from flask_login import login_user, current_user, login_required, logout_user
-from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta
+from werkzeug.security import generate_password_hash
+from datetime import date, datetime, timedelta
 from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm, PaymentForm, ConfigFeeForm, AccountUpdateForm
-from .models import User, Item, ItemStatus,ItemImage, Category, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus, Payment, SystemConfiguration
+from .models import User, Item, ItemStatus, ItemImage, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus, Payment, SystemConfiguration
 import os, io, base64
 import matplotlib.pyplot as plt
 from collections import defaultdict
@@ -400,7 +400,17 @@ def manager():
     expert_categories = {
         expert.id: [category.category for category in expert.expertise] for expert in experts
     }
-    return render_template('manager.html', items=pending_items, experts=experts, expert_categories=expert_categories)
+    available_experts = User.query.join(ExpertAvailability).filter(User.priority == UserPriority.EXPERT.value).filter(ExpertAvailability.start_time <= datetime.utcnow()).filter(ExpertAvailability.end_time >= datetime.utcnow()).all()
+    available_categories = {
+        expert.id: [category.category for category in expert.expertise] for expert in available_experts
+    }
+    upcoming_experts = User.query.join(ExpertAvailability).filter(User.priority == UserPriority.EXPERT.value).filter(ExpertAvailability.start_time > datetime.utcnow()).filter(ExpertAvailability.start_time <= datetime.utcnow() + timedelta(days=7)).all()
+    upcoming_categories = {
+        expert.id: [category.category for category in expert.expertise] for expert in upcoming_experts
+    }
+    experts_filtered = User.query.join(ExpertAvailability).filter(User.priority == UserPriority.EXPERT.value).filter(ExpertAvailability.start_time <= datetime.utcnow()).filter(ExpertAvailability.end_time >= datetime.utcnow()).all()
+    print("Experts filtered by start_time:", experts_filtered)
+    return render_template('manager.html', items=pending_items, experts=experts, expert_categories=expert_categories, available_experts=available_experts, upcoming_experts=upcoming_experts, available_categories=available_categories, upcoming_categories=upcoming_categories)
 
 @views.route('/assign_expert/<int:item_id>', methods=['GET', 'POST'])
 @login_required

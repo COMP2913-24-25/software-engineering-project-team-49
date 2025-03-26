@@ -4,7 +4,7 @@ from wtforms import StringField, PasswordField, SubmitField, SelectField, TextAr
 from wtforms_sqlalchemy.fields import QuerySelectMultipleField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange, Email, Regexp
 from .models import User, Category
-from datetime import datetime, timedelta
+from datetime import datetime
 
 class SignUpForm(FlaskForm):
     first_name= StringField('first name')
