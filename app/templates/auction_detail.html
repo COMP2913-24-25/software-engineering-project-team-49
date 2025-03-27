@@ -47,7 +47,7 @@
       
             {% if current_user.is_authenticated %}
               {% if item.seller_id != current_user.id %}
-                {% if item.status == "ACTIVE" %}
+              {% if item.status == ItemStatus.ACTIVE.value %}
                   <!-- Watch/Unwatch button -->
                   {% if item in current_user.watched_items %}
                     <form action="{{ url_for('views.unwatch_item', item_id=item.id) }}" method="POST" class="mb-3">

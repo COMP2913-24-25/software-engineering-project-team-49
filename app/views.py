@@ -251,7 +251,7 @@ def auction_detail(item_id):
             flash("Bid placed successfully", "success")
             return redirect(url_for('views.auction_detail', item_id=item.id))
 
-    return render_template('auction_detail.html', item=item, form=form)
+    return render_template('auction_detail.html', item=item, form=form, ItemStatus=ItemStatus)
 
 @views.route('/notifications', methods=['GET'])
 @login_required
