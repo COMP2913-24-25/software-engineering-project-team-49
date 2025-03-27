@@ -265,14 +265,6 @@ def notifications():
     notifications = Notification.query.filter(Notification.user_id==current_user.id).all()
     return render_template('notifications.html', notifications=notifications)
 
-@views.route('/my_items', methods=['GET', 'POST'])
-@login_required
-def my_items():
-    items = Item.query.filter_by(seller_id=current_user.id).all()
-    for item in items:
-        item.authentication_request = AuthenticationRequest.query.filter_by(item_id=item.id).first()
-    return render_template('my_items.html', items=items)
-
 @views.route('/expert', methods=['GET', 'POST'])
 @login_required
 def expert():
@@ -839,6 +831,8 @@ def my_auctions():
     
     my_auctions = current_user.items_sold.all()
     pending_auctions = [item for item in my_auctions if item.status == ItemStatus.PENDING.value]
+    for pending_auction in pending_auctions:
+        pending_auction.authentication_request = AuthenticationRequest.query.filter_by(item_id=pending_auction.id).first()
     active_auctions = [item for item in my_auctions if item.status == ItemStatus.ACTIVE.value]
     sold_auctions = [item for item in my_auctions if item.status == ItemStatus.SOLD.value]
     expired_auctions = [item for item in my_auctions if item.status == ItemStatus.EXPIRED.value]
@@ -866,6 +860,11 @@ def delete_auction(item_id):
     if item.status == ItemStatus.SOLD.value:
         flash("You cannot delete an auction that has already been sold.", "warning")
         return redirect(url_for('views.my_auctions'))
+    
+    # Delete related authentication messages first
+    if item.authentication_request:
+        AuthenticationMessage.query.filter_by(request_id=item.authentication_request.id).delete()
+        db.session.delete(item.authentication_request)
 
     db.session.delete(item)
     db.session.commit()
