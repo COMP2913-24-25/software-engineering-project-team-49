@@ -736,11 +736,33 @@ def my_auctions():
     active_auctions = [item for item in my_auctions if item.status == ItemStatus.ACTIVE.value]
     sold_auctions = [item for item in my_auctions if item.status == ItemStatus.SOLD.value]
     expired_auctions = [item for item in my_auctions if item.status == ItemStatus.EXPIRED.value]
+    won_auctions = current_user.items_won.filter_by(status=ItemStatus.SOLD.value).all()
 
     return render_template(
-        'my_account.html', 
+        'my_auctions.html', 
         pending_auctions=pending_auctions,
         active_auctions=active_auctions,
         sold_auctions=sold_auctions,
-        expired_auctions=expired_auctions
+        expired_auctions=expired_auctions,
+        won_auctions=won_auctions
     )
+
+@views.route('/delete_auction/<int:item_id>', methods=['POST'])
+@login_required
+def delete_auction(item_id):
+    item = Item.query.get_or_404(item_id)
+
+    if item.seller_id != current_user.id:
+        flash("You don't have permission to delete this auction.", "danger")
+        return redirect(url_for('views.my_auctions'))
+
+    # Prevent deletion of sold auctions
+    if item.status == ItemStatus.SOLD.value:
+        flash("You cannot delete an auction that has already been sold.", "warning")
+        return redirect(url_for('views.my_auctions'))
+
+    db.session.delete(item)
+    db.session.commit()
+    
+    flash("Auction deleted successfully.", "success")
+    return redirect(url_for('views.my_auctions'))
