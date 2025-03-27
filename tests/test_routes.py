@@ -151,7 +151,7 @@ def test_place_bid(authenticated_client, init_database):
         minimum_price=100.0,
         current_price=100.0,
         seller_id=seller.id,
-        status=ItemStatus.PENDING.value,
+        status=ItemStatus.ACTIVE.value,
         end_time=datetime.utcnow() + timedelta(days=5)
     )
     db.session.add(item)

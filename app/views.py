@@ -213,8 +213,12 @@ def auction_detail(item_id):
     # Fetch the highest bid on item
     highest_bid = Bid.query.filter_by(item_id=item.id).order_by(Bid.amount.desc()).first()
 
+    # Prevent bidding if the auction is not ACTIVE
+    if item.status != ItemStatus.ACTIVE.value:
+        form = None
+
     # If user is submitting a bid, confirm they are logged in
-    if request.method == 'POST':
+    if request.method == 'POST' and item.status == ItemStatus.ACTIVE.value:
         if not current_user.is_authenticated:
             flash("You must be logged in to place a bid.", "warning")
             return redirect(url_for('views.login'))
@@ -249,7 +253,7 @@ def auction_detail(item_id):
             flash("Bid placed successfully", "success")
             return redirect(url_for('views.auction_detail', item_id=item.id))
 
-    return render_template('auction_detail.html', item=item, form=form)
+    return render_template('auction_detail.html', item=item, form=form, ItemStatus=ItemStatus)
 
 @views.route('/notifications', methods=['GET'])
 @login_required
@@ -716,8 +720,8 @@ def watching():
         return redirect(url_for('views.expert'))
     if is_manager_user(current_user):
         return redirect(url_for('views.manager'))
-    items = current_user.watched_items.all()
-    return render_template('watching.html', items=items)
+    active_items = [item for item in current_user.watched_items if item.status == ItemStatus.ACTIVE.value]
+    return render_template('watching.html', items=active_items)
 
 @views.route('/account', methods=['GET', 'POST'])
 @login_required
@@ -824,3 +828,47 @@ def manager_account():
         form.email.data = current_user.email
     
     return render_template('manager_account.html', form=form)
+
+@views.route('my_auctions', methods=['GET', 'POST'])
+@login_required
+def my_auctions():
+    if is_expert_user(current_user):
+        return redirect(url_for('views.expert'))
+    if is_manager_user(current_user):
+        return redirect(url_for('views.manager'))
+    
+    my_auctions = current_user.items_sold.all()
+    pending_auctions = [item for item in my_auctions if item.status == ItemStatus.PENDING.value]
+    active_auctions = [item for item in my_auctions if item.status == ItemStatus.ACTIVE.value]
+    sold_auctions = [item for item in my_auctions if item.status == ItemStatus.SOLD.value]
+    expired_auctions = [item for item in my_auctions if item.status == ItemStatus.EXPIRED.value]
+    won_auctions = current_user.items_won.filter_by(status=ItemStatus.SOLD.value).all()
+
+    return render_template(
+        'my_auctions.html', 
+        pending_auctions=pending_auctions,
+        active_auctions=active_auctions,
+        sold_auctions=sold_auctions,
+        expired_auctions=expired_auctions,
+        won_auctions=won_auctions
+    )
+
+@views.route('/delete_auction/<int:item_id>', methods=['POST'])
+@login_required
+def delete_auction(item_id):
+    item = Item.query.get_or_404(item_id)
+
+    if item.seller_id != current_user.id:
+        flash("You don't have permission to delete this auction.", "danger")
+        return redirect(url_for('views.my_auctions'))
+
+    # Prevent deletion of sold auctions
+    if item.status == ItemStatus.SOLD.value:
+        flash("You cannot delete an auction that has already been sold.", "warning")
+        return redirect(url_for('views.my_auctions'))
+
+    db.session.delete(item)
+    db.session.commit()
+    
+    flash("Auction deleted successfully.", "success")
+    return redirect(url_for('views.my_auctions'))
