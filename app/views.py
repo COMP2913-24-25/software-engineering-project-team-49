@@ -618,8 +618,8 @@ def watching():
         return redirect(url_for('views.expert'))
     if is_manager_user(current_user):
         return redirect(url_for('views.manager'))
-    items = current_user.watched_items.all()
-    return render_template('watching.html', items=items)
+    active_items = [item for item in current_user.watched_items if item.status == ItemStatus.ACTIVE.value]
+    return render_template('watching.html', items=active_items)
 
 @views.route('/account', methods=['GET', 'POST'])
 @login_required
