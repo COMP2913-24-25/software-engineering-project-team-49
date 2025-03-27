@@ -4,6 +4,14 @@ class Config:
     WTF_CSRF_ENABLED = True
     SECRET_KEY = 'a-very-secret-elephant'
 
+    # MailerSend SMTP Configuration
+    MAIL_SERVER = 'smtp.mailersend.net'
+    MAIL_PORT = 587
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = 'MS_GzN1QW@trial-r9084zvrowvgw63d.mlsender.net'
+    MAIL_PASSWORD = 'mssp.eYedm8A.0r83ql3j97xgzw1j.1AGsnYx'
+    MAIL_DEFAULT_SENDER = 'MS_GzN1QW@trial-r9084zvrowvgw63d.mlsender.net'
+    
     #if deployed keep session_cookie_secure as True
     SESSION_COOKIE_SECURE = True
 

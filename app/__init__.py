@@ -8,9 +8,21 @@ import threading
 import time
 from datetime import datetime, timedelta
 from config import config_dict
+from flask_mail import Mail, Message
 
 db = SQLAlchemy()
 login_manager = LoginManager()
+mail = Mail()
+
+def send_email(app, subject, recipient, body):
+    """Utility function to send emails"""
+    msg = Message(subject, recipients=[recipient])
+    msg.body = body
+    try:
+        with app.app_context():
+            mail.send(msg)
+    except Exception as e:
+        print(f"Error sending email: {e}")
 
 def check_auctions(app):
     """Background thread that checks for expired auctions."""
@@ -21,7 +33,7 @@ def check_auctions(app):
             with app.app_context():  # Ensure we have access to the database
                 now = datetime.utcnow()
 
-                from app.models import db, Item, Bid, Notification, ItemStatus
+                from app.models import db, Item, Bid, Notification, ItemStatus, User
                 from sqlalchemy import or_
 
                 # Find items whose auction has ended but still marked as ACTIVE
@@ -32,6 +44,8 @@ def check_auctions(app):
                     highest_bid = Bid.query.filter(Bid.item_id == item.id).order_by(Bid.amount.desc()).first()
 
                     if highest_bid:
+                        winner = User.query.get(highest_bid.user_id)
+                        
                         # Notify the winner
                         winner_notification = Notification(
                             user_id=highest_bid.user_id,
@@ -42,6 +56,20 @@ def check_auctions(app):
                         db.session.add(winner_notification)
                         item.status = ItemStatus.PAYING.value
                         item.winner_id = highest_bid.user_id
+
+                        # Send email confirmation
+                        email_subject = "Congratulations! You Won the Auction"
+                        email_body = f"""
+                        Hello {winner.username},
+
+                        Congratulations! You have won the auction for '{item.name}' with a bid of £{highest_bid.amount:.2f}.
+
+                        Please proceed to payment.
+
+                        Best regards,
+                        Bid Horizon
+                        """
+                        send_email(app, email_subject, winner.email, email_body)
 
                     else:
                         # No bids, so notify the seller
@@ -74,6 +102,8 @@ def create_app():
 
     # Load the appropriate configuration
     app.config.from_object(config_dict.get(env, 'development'))
+
+    mail.init_app(app)
 
     Bootstrap(app)
     csrf = CSRFProtect(app)
