@@ -8,7 +8,7 @@ from flask_login import login_user, current_user, login_required, logout_user
 from werkzeug.security import generate_password_hash
 from datetime import datetime, timedelta
 from .forms import SignUpForm, LogInForm, AuctionItemForm, BidItemForm, AvailabilityForm, CategoryForm, AssignExpertForm, UnavailableForm, AuthenticateForm, PaymentForm, ConfigFeeForm, AccountUpdateForm, AuthenticationChatForm
-from .models import User, Item, ItemStatus, ItemImage, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus, Payment, SystemConfiguration
+from .models import User, Item, ItemStatus, ItemImage, Bid, Notification, AuthenticationRequest, ExpertAvailability, ExpertCategory, UserPriority, AuthenticationMessage, AvailabilityStatus, AuthenticationStatus, Payment, SystemConfiguration, Category
 import os, io, base64
 import matplotlib.pyplot as plt
 from collections import defaultdict
@@ -871,3 +871,50 @@ def delete_auction(item_id):
     
     flash("Auction deleted successfully.", "success")
     return redirect(url_for('views.my_auctions'))
+
+@views.route('/manage_categories', methods=['GET', 'POST'])
+@login_required
+def manage_categories():
+    if current_user.priority != UserPriority.MANAGER.value:
+        flash("Access denied.", "danger")
+        return redirect(url_for('views.home'))
+
+    categories = Category.query.all()
+
+    if request.method == 'POST':
+        category_name = request.form.get('category_name').strip()
+
+        if not category_name:
+            flash("Category name cannot be empty.", "danger")
+        elif Category.query.filter_by(name=category_name).first():
+            flash("Category name already exists. Please choose a different name.", "danger")
+        else:
+            new_category = Category(name=category_name)
+            db.session.add(new_category)
+            db.session.commit()
+            flash("Category added successfully!", "success")
+
+        return redirect(url_for('views.manage_categories'))
+
+    return render_template('manage_categories.html', categories=categories)
+
+
+
+@views.route('/delete_category/<int:category_id>', methods=['POST'])
+@login_required
+def delete_category(category_id):
+    if current_user.priority != UserPriority.MANAGER.value:
+        flash("Access denied.", "danger")
+        return redirect(url_for('views.home'))
+
+    category = Category.query.get_or_404(category_id)
+
+    if category.items.count() > 0:
+        flash("Cannot delete category while items are still assigned to it. Please reassign or remove the items first.", "danger")
+        return redirect(url_for('views.manage_categories'))
+    
+    db.session.delete(category)
+    db.session.commit()
+    flash("Category deleted successfully!", "success")
+
+    return redirect(url_for('views.manage_categories'))
