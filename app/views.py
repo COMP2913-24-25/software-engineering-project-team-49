@@ -211,8 +211,12 @@ def auction_detail(item_id):
     # Fetch the highest bid on item
     highest_bid = Bid.query.filter_by(item_id=item.id).order_by(Bid.amount.desc()).first()
 
+    # Prevent bidding if the auction is not ACTIVE
+    if item.status != ItemStatus.ACTIVE.value:
+        form = None
+
     # If user is submitting a bid, confirm they are logged in
-    if request.method == 'POST':
+    if request.method == 'POST' and item.status == ItemStatus.ACTIVE.value:
         if not current_user.is_authenticated:
             flash("You must be logged in to place a bid.", "warning")
             return redirect(url_for('views.login'))

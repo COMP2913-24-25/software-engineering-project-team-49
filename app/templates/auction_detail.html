@@ -47,36 +47,42 @@
       
             {% if current_user.is_authenticated %}
               {% if item.seller_id != current_user.id %}
-              <!-- Watch/Unwatch button -->
-                {% if item in current_user.watched_items %}
-                  <form action="{{ url_for('views.unwatch_item', item_id=item.id) }}" method="POST" class="mb-3">
-                    {{ form.hidden_tag() }} 
-                    <button type="submit" class="btn btn-outline-danger btn-sm">💔 Unwatch Auction</button>
+                {% if item.status == "ACTIVE" %}
+                  <!-- Watch/Unwatch button -->
+                  {% if item in current_user.watched_items %}
+                    <form action="{{ url_for('views.unwatch_item', item_id=item.id) }}" method="POST" class="mb-3">
+                      {{ form.hidden_tag() }} 
+                      <button type="submit" class="btn btn-outline-danger btn-sm">💔 Unwatch Auction</button>
+                    </form>
+                  {% else %}
+                    <form action="{{ url_for('views.watch_item', item_id=item.id) }}" method="POST" class="mb-3">
+                      {{ form.hidden_tag() }} 
+                      <button type="submit" class="btn btn-outline-primary btn-sm">⭐ Watch Auction</button>
+                    </form>
+                  {% endif %} 
+
+                  <h5 class="mt-4">Place Your Bid</h5>
+                  <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="form-group">
+                      {{ form.bid_amount.label }}
+                      {{ form.bid_amount(class="form-control", placeholder="Enter at least 10% more than current price") }}
+                      {% if form.bid_amount.errors %}
+                      <small class="text-danger">{{ form.bid_amount.errors[0] }}</small>
+                      {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2">Place Bid</button>
                   </form>
                 {% else %}
-                  <form action="{{ url_for('views.watch_item', item_id=item.id) }}" method="POST" class="mb-3">
-                    {{ form.hidden_tag() }} 
-                    <button type="submit" class="btn btn-outline-primary btn-sm">⭐ Watch Auction</button>
-                  </form>
-                {% endif %} 
-                <h5 class="mt-4">Place Your Bid</h5>
-                <form method="POST">
-                  {{ form.hidden_tag() }}
-                  <div class="form-group">
-                    {{ form.bid_amount.label }}
-                    {{ form.bid_amount(class="form-control", placeholder="Enter at least 10% more than current price") }}
-                    {% if form.bid_amount.errors %}
-                    <small class="text-danger">{{ form.bid_amount.errors[0] }}</small>
-                    {% endif %}
-                  </div>
-                  <button type="submit" class="btn btn-primary mt-2">Place Bid</button>
-                </form>
+                  <p class="text-muted"><strong>Bidding is closed.</strong> This auction has ended.</p>
+                {% endif %}
               {% else %}
                 <p class="text-muted">You cannot bid on your own item.</p>
               {% endif %}
             {% else %}
               <p><a href="{{ url_for('views.login') }}" class="btn btn-warning">Log in to place a bid</a></p>
             {% endif %}
+
       
             <a href="{{ url_for('views.auction_list') }}" class="btn btn-outline-secondary mt-3">← Back to Auctions</a>
           </div>
