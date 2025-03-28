@@ -2,9 +2,9 @@
 {% block content %}
 
 <div class="container mt-4">
-    <h2>My Auctions</h2>
+    <h1>My Auctions</h1>
 
-    <h3>Pending Auctions</h3>
+    <h2>Pending Auctions</h2>
     {% if pending_auctions %}
     <div class="row">
         {% for item in pending_auctions %}
@@ -16,7 +16,7 @@
                     <img src="{{ url_for('static', filename='images/placeholder.png') }}" class="card-img-top" alt="No Image Available">
                 {% endif %}
                 <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">{{ item.name }}</h5>
+                    <h3 class="card-title">{{ item.name }}</h3>
                     <p class="card-text">{{ item.description[:100] }}...</p>
                     <p class="mb-1"><strong>Price:</strong> £{{ item.current_price }}</p>
                     <p class="text-muted">
@@ -57,7 +57,7 @@
                     <img src="{{ url_for('static', filename='images/placeholder.png') }}" class="card-img-top" alt="No Image Available">
                 {% endif %}
                 <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">{{ item.name }}</h5>
+                    <h4 class="card-title">{{ item.name }}</h4>
                     <p class="card-text">{{ item.description[:100] }}...</p>
                     <p class="mb-1"><strong>Price:</strong> £{{ item.current_price }}</p>
                     <p class="text-muted">
@@ -93,7 +93,7 @@
                     <img src="{{ url_for('static', filename='images/placeholder.png') }}" class="card-img-top" alt="No Image Available">
                 {% endif %}
                 <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">{{ item.name }}</h5>
+                    <h4 class="card-title">{{ item.name }}</h4>
                     <p class="card-text">{{ item.description[:100] }}...</p>
                     <p class="mb-1"><strong>Price:</strong> £{{ item.current_price }}</p>
                     <p class="text-muted">
@@ -125,7 +125,7 @@
                     <img src="{{ url_for('static', filename='images/placeholder.png') }}" class="card-img-top" alt="No Image Available">
                 {% endif %}
                 <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">{{ item.name }}</h5>
+                    <h4 class="card-title">{{ item.name }}</h4>
                     <p class="card-text">{{ item.description[:100] }}...</p>
                     <p class="mb-1"><strong>Price:</strong> £{{ item.current_price }}</p>
                     <p class="text-muted">
@@ -161,7 +161,7 @@
                     <img src="{{ url_for('static', filename='images/placeholder.png') }}" class="card-img-top" alt="No Image Available">
                 {% endif %}
                 <div class="card-body d-flex flex-column">
-                    <h5 class="card-title">{{ item.name }}</h5>
+                    <h4 class="card-title">{{ item.name }}</h4>
                     <p class="card-text">{{ item.description[:100] }}...</p>
                     <p class="mb-1"><strong>Winning Bid:</strong> £{{ item.current_price }}</p>
                     <a href="{{ url_for('views.auction_detail', item_id=item.id) }}" class="btn btn-success mt-auto">View Auction</a>
