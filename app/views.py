@@ -418,6 +418,7 @@ def authentication_chat(authentication_id):
         return redirect(url_for('views.home'))
     messages = AuthenticationMessage.query.filter_by(request_id=authentication_id).order_by(AuthenticationMessage.created_at.asc()).all() # Fetch all messages for this request ordered by creation date
     form = AuthenticationChatForm()
+    base_template = "expert_base.html" if current_user.id == authentication.expert_id else "base.html"
     if form.validate_on_submit(): # Create new message for authentication request
         new_message = AuthenticationMessage(request_id=authentication_id,
                                             sender_id=current_user.id,
@@ -435,7 +436,7 @@ def authentication_chat(authentication_id):
         db.session.commit() # Save to database
         flash("Message Successfully Sent!", "success")
         return redirect(url_for('views.authentication_chat', authentication_id=authentication_id))
-    return render_template('authentication_chat.html', form=form, messages=messages, authentication=authentication)
+    return render_template('authentication_chat.html', form=form, messages=messages, authentication=authentication, base_template=base_template)
 
 @views.route('/manager', methods=['GET', 'POST'])
 @login_required
