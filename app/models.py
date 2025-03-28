@@ -62,7 +62,7 @@ class User(db.Model, UserMixin):
     availability = db.relationship('ExpertAvailability', backref='expert', lazy='dynamic', cascade="all, delete-orphan")
     authentication_requests = db.relationship('AuthenticationRequest', backref='expert', lazy='dynamic',
                                              foreign_keys='AuthenticationRequest.expert_id')
-    notification = db.relationship('Notification', backref='self', lazy='dynamic', cascade="all, delete-orphan")
+    notifications = db.relationship('Notification', back_populates='user', cascade="all, delete-orphan")
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -143,7 +143,7 @@ class Item(db.Model):
     bids = db.relationship('Bid', backref='item', lazy='dynamic', cascade="all, delete-orphan")
     images = db.relationship('ItemImage', backref='item', lazy=True, cascade="all, delete-orphan")
     authentication_request = db.relationship('AuthenticationRequest', backref='item', uselist=False, cascade="all, delete-orphan")
-    notifications = db.relationship('Notification', lazy='dynamic', cascade="all, delete-orphan")
+    notifications = db.relationship('Notification', back_populates='item', cascade="all, delete-orphan")
     
     def is_active(self):
         now = datetime.utcnow()
@@ -276,8 +276,8 @@ class Notification(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
-    user = db.relationship('User')
-    item = db.relationship('Item')
+    user = db.relationship('User', back_populates='notifications', overlaps="notification,self")
+    item = db.relationship('Item', back_populates='notifications', overlaps="notifications")
     
     def __repr__(self):
         return f'<Notification for user {self.user_id} type {self.type}>'
