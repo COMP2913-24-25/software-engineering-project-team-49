@@ -9,7 +9,8 @@
 
     <!-- 🔍 Search Bar -->
     <form action="{{ url_for('views.search') }}" method="GET" class="my-4">
-        <input class="form-control w-50 mx-auto" type="search" placeholder="Search auctions..." name="query" required>
+        <label for="search-input" class="visually-hidden">Search Auctions</label>
+        <input id="search-input" class="form-control w-50 mx-auto" type="search" placeholder="Search auctions..." name="query" required>
         <button class="btn btn-primary mt-2">🔍 Search</button>
     </form>
 
@@ -40,7 +41,7 @@
                                      class="card-img-top" alt="No image available">
                             {% endif %}
                             <div class="card-body text-center">
-                                <h5 class="card-title">{{ item.name }}</h5>
+                                <h3 class="card-title">{{ item.name }}</h3>
                                 <p class="card-text"><strong>Current Price:</strong> £{{ item.current_price }}</p>
                                 <p class="text-muted">
                                     <strong>Time Left:</strong> 
@@ -61,10 +62,10 @@
         </div>
 
         <!-- Carousel Controls -->
-        <button class="carousel-control-prev" type="button" data-bs-target="#featuredCarousel" data-bs-slide="prev">
+        <button class="carousel-control-prev" type="button" data-bs-target="#featuredCarousel" data-bs-slide="prev" aria-label="Previous">
             <span class="carousel-control-prev-icon"></span>
         </button>
-        <button class="carousel-control-next" type="button" data-bs-target="#featuredCarousel" data-bs-slide="next">
+        <button class="carousel-control-next" type="button" data-bs-target="#featuredCarousel" data-bs-slide="next" aria-label="Next">
             <span class="carousel-control-next-icon"></span>
         </button>
     </div>

@@ -5,10 +5,10 @@
     <form method="POST">
         {{ form.hidden_tag() }}
         <div class="form-group">
-            <label>{{ form.expert_categories.label }}</label>
-            {{ form.expert_categories(class="form-control") }}
+            {{ form.expert_categories.label(for="expert_categories") }}
+            {{ form.expert_categories(class="form-control", id="expert_categories") }}
         </div>
-        <button type="submit" class="btn btn-primary">{{ form.submit.label }}</button>
+        {{ form.submit(class="btn btn-primary") }}
     </form>
 </div>
 {% endblock %}

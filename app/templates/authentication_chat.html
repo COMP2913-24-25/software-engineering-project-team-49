@@ -1,6 +1,6 @@
 {% extends base_template %}
 {% block content %}
-<h2>Authentication Chat</h2>
+<h1>Authentication Chat</h1>
 <div class="chat">
     {% for message in messages %}
         <div class="{% if message.sender_id == current_user.id %} sent {% else %} received {% endif %}">

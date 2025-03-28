@@ -1,7 +1,7 @@
 {% extends "manager_base.html" %}
 {% block content %}
 <div class="container mt-5">
-    <h2>Manage user roles</h2>
+    <h1>Manage user roles</h1>
     <table class="table table-bordered">
         <thead>
             <tr>
@@ -26,7 +26,8 @@
                     <form method="POST">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"> 
                         <input type="hidden" name="user_id" value="{{ user.id }}">
-                        <select name="new_role" class="form-control">
+                        <label for="new_role_{{ user.id }}">Select Role</label>
+                        <select name="new_role" id="new_role_{{ user.id }}" class="form-control">
                             <option value="{{ UserPriority.GENERAL_USER.value }}" {% if user.priority == UserPriority.GENERAL_USER.value %}selected{% endif %}>User</option>
                             <option value="{{ UserPriority.EXPERT.value }}" {% if user.priority == UserPriority.EXPERT.value %}selected{% endif %}>Expert</option>
                             <option value="{{ UserPriority.MANAGER.value }}" {% if user.priority == UserPriority.MANAGER.value %}selected{% endif %}>Manager</option>

@@ -1,7 +1,7 @@
 {% extends "manager_base.html" %}
 {% block content %}
 <div class="container mt-5">
-    <h2>View weekly costs</h2>
+    <h1>View weekly costs</h1>
     <img src="data:image/png;base64,{{ plot_path }}" alt="Income graph for past week">
     <p>Period: Last 7 days</p>
     <table class="table table-striped">
@@ -26,8 +26,8 @@
             {% endfor %}
         </tbody>
     </table>
-    <h3>Total sales revenue: £{{ "%.2f"|format(total_revenue) }}</h3>
-    <h3>Total fees earned: £{{ "%.2f"|format(total_fees) }}</h3>
-    <h3>Percentage earnings: £{{ "%.2f"|format(percentage_earnings) }}%</h3>
+    <h2>Total sales revenue: £{{ "%.2f"|format(total_revenue) }}</h2>
+    <h2>Total fees earned: £{{ "%.2f"|format(total_fees) }}</h2>
+    <h2>Percentage earnings: £{{ "%.2f"|format(percentage_earnings) }}%</h2>
 </div>
 {% endblock %}
