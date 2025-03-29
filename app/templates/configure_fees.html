@@ -1,18 +1,28 @@
 {% extends "manager_base.html" %}
 {% block content %}
 <div class="container mt-5">
-    <h1>Configure percentage fees</h1>
-    <form method= "POST">
+    <h1>Configure Percentage Fees</h1>
+    
+    <form method="POST" aria-label="Configure Fee Percentages">
         {{ form.hidden_tag() }}
+
         <div class="mb-3">
-            <label class="form-label">Default fee percentage is 1%</label>
-            {{ form.default_fee(class="form-control") }}
+            <label for="{{ form.default_fee.id }}" class="form-label">
+                Default Fee Percentage (currently {{ form.default_fee.data }}%)
+            </label>
+            {{ form.default_fee(class="form-control", id=form.default_fee.id) }}
         </div>
+
         <div class="mb-3">
-            <label class="form-label">Expert Approved fee percenatge is 5%</label>
-            {{ form.expert_fee(class="form-control") }}
+            <label for="{{ form.expert_fee.id }}" class="form-label">
+                Expert Approved Fee Percentage (currently {{ form.expert_fee.data }}%)
+            </label>
+            {{ form.expert_fee(class="form-control", id=form.expert_fee.id) }}
         </div>
-        <button type="submit" class="btn btn-primary">{{ form.submit.label }}</button>
+
+        <button type="submit" class="btn btn-primary" aria-label="Submit Fee Configuration">
+            Submit
+        </button>
     </form>
 </div>
 {% endblock %}

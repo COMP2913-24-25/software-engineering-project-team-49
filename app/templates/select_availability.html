@@ -1,32 +1,37 @@
 {% extends "expert_base.html" %}
 {% block content %}
 <div class="container mt-5">
-    <h2>Set your availability:</h2>
-    <form method="POST" action="{{ url_for('views.select_availability') }}">
+    <h1>Expert Availability</h1>
+
+    <form method="POST" action="{{ url_for('views.select_availability') }}" aria-label="Unavailable for the Week">
         {{ unavailable.hidden_tag() }}
         <div class="form-check mb-3">
-            {{ unavailable.disable_week(class="form-check-input") }}
-            <label class="form-check-label">Unavailable for Whole Week</label>
+            {{ unavailable.disable_week.label(class="form-check-label", for=unavailable.disable_week.id) }}
+            {{ unavailable.disable_week(class="form-check-input", id=unavailable.disable_week.id) }}
         </div>
-        <button name="unavailable_submit" type="submit" class="btn btn-primary mt-3">{{ unavailable.submit.label }}</button>
+        <button name="unavailable_submit" type="submit" class="btn btn-primary mt-3" aria-label="Submit Unavailability">
+            Submit
+        </button>
     </form>
-    <form method="POST" action="{{ url_for('views.select_availability') }}">
+
+    <form method="POST" action="{{ url_for('views.select_availability') }}" aria-label="Daily Availability Form">
         {{ form.hidden_tag() }}
-        <h4>Set Availability for each day</h4>
+        <h2>Set Daily Availability</h2>
         {% for day in ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] %}
         <div class="row mb-3">
-            <div class="col md-4">
-                <strong>{{ day }}</strong>
+            <div class="col-md-4">
+                <label for="{{ form[day.lower() ~ '_start'].id }}"><strong>{{ day }}</strong> - Start</label>
+                {{ form[day.lower() ~ "_start"](class="form-control", id=form[day.lower() ~ "_start"].id) }}
             </div>
-            <div class="col md-4">
-                {{ form[day.lower() ~ "_start"] (class="form-control") }}
-            </div>
-            <div class="col md-4">
-                {{ form[day.lower() ~ "_end"] (class="form-control") }}
+            <div class="col-md-4">
+                <label for="{{ form[day.lower() ~ '_end'].id }}">{{ day }} - End</label>
+                {{ form[day.lower() ~ "_end"](class="form-control", id=form[day.lower() ~ "_end"].id) }}
             </div>
         </div>
         {% endfor %}
-        <button name="available_submit" type="submit" class="btn btn-primary mt-3">{{ form.submit.label }}</button>
+        <button name="available_submit" type="submit" class="btn btn-primary mt-3" aria-label="Submit Daily Availability">
+            Submit
+        </button>
     </form>
 </div>
 {% endblock %}
