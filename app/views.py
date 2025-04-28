@@ -533,37 +533,79 @@ def configure_fees():
 @views.route('/weekly_costs', methods=['GET'])
 @login_required
 def weekly_costs():
-    if current_user.priority != UserPriority.MANAGER.value: # Ensure only managers can access page
+    if current_user.priority != UserPriority.MANAGER.value:
         flash("Access denied.", "danger")
         return redirect(url_for('views.home'))
-    one_week_ago = datetime.utcnow() - timedelta(days=7) # Calculate one week ago
-    payments = Payment.query.filter(Payment.status=='completed', Payment.completed_at >= one_week_ago).all() # Fetch all completed payments from past week
-    daily_revenue = defaultdict(float) # Create dictionaries for daily revenue and fees
-    daily_fees  = defaultdict(float)
-    for payment in payments: # Iterate through the payments and calculate total revenue and fees per day
+    
+    # Calculate one week ago
+    one_week_ago = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=7)
+    
+    # Fetch all completed payments from past week
+    payments = Payment.query.filter(Payment.status=='completed', Payment.completed_at >= one_week_ago).all()
+    
+    # Generate list of days in past week - full datetime objects
+    day_objects = [(one_week_ago + timedelta(days=i)) for i in range(8)]  # Include today
+    days = [day.strftime('%Y-%m-%d') for day in day_objects]
+    
+    # Create dictionaries for daily revenue and fees
+    daily_revenue = defaultdict(float)
+    daily_fees = defaultdict(float)
+    
+    # Iterate through the payments and calculate total revenue and fees per day
+    for payment in payments:
+        
+        # Format the date correctly
         string_date = payment.completed_at.strftime('%Y-%m-%d')
+        
         daily_revenue[string_date] += payment.amount
         daily_fees[string_date] += payment.fee_amount
-    days = [(one_week_ago + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)] # Generate list of days in past week
-    revenues = [daily_revenue[day] for day in days] # Put data in arrays for plotting
+    
+    
+    # Put data in arrays for plotting
+    revenues = [daily_revenue[day] for day in days]
     fees = [daily_fees[day] for day in days]
-    plt.figure(figsize=(8,4)) # Create the graph for past week's revenue and earnings
-    plt.plot(days, revenues, marker='o', linestyle='-', label="Total Revenue (£)")
-    plt.plot(days, fees, marker='o', linestyle='-', label="Total Earnings (£)", color='Blue')
+    
+    
+    # Clear any existing plot
+    plt.clf()
+    plt.close('all')
+    
+    # Create the graph for past week's revenue and earnings
+    plt.figure(figsize=(10,5))
+    plt.plot(days, revenues, marker='o', linestyle='-', linewidth=2, label="Total Revenue (£)")
+    plt.plot(days, fees, marker='s', linestyle='-', linewidth=2, label="Total Earnings (£)", color='blue')
+    plt.grid(True, linestyle='--', alpha=0.7)
     plt.xticks(rotation=45)
-    plt.xlabel("Date")
-    plt.ylabel("Amount (£)")
-    plt.title("Revenue and earnings in the past week")
-    plt.legend()
+    plt.xlabel("Date", fontsize=12)
+    plt.ylabel("Amount (£)", fontsize=12)
+    plt.title("Revenue and Earnings in the Past Week", fontsize=14)
+    plt.legend(loc='best')
     plt.tight_layout()
-    img = io.BytesIO() # Save plot to a BytesIO stream
-    plt.savefig(img, format='png')
+    
+    # Set y-axis to start from 0
+    plt.ylim(bottom=0)
+    
+    # If all values are 0, set a visible y range
+    if max(revenues + fees) == 0:
+        plt.ylim(top=10)
+    
+    # Save plot to BytesIO stream with a timestamp to prevent caching
+    img = io.BytesIO()
+    plt.savefig(img, format='png', dpi=100)
     img.seek(0)
-    plot_path = base64.b64encode(img.getvalue()).decode() # Convert image to base64 encoding for rendering in template
-    total_revenue = sum(payment.amount for payment in payments) # Calculate total revenue, fees and percentage earnings
+    plot_path = base64.b64encode(img.getvalue()).decode()
+    
+    # Calculate total revenue, fees and percentage earnings
+    total_revenue = sum(payment.amount for payment in payments)
     total_fees = sum(payment.fee_amount for payment in payments)
     percentage_earnings = (total_fees / total_revenue * 100) if total_revenue else 0
-    return render_template('weekly_costs.html', payments=payments, total_revenue=total_revenue, total_fees=total_fees, percentage_earnings=percentage_earnings, plot_path=plot_path)
+    
+    return render_template('weekly_costs.html', 
+                          payments=payments, 
+                          total_revenue=total_revenue, 
+                          total_fees=total_fees, 
+                          percentage_earnings=percentage_earnings, 
+                          plot_path=plot_path)
 
 @views.route('/manage_users', methods=['GET','POST'])
 @login_required
