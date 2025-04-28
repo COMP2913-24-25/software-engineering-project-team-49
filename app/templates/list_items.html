@@ -2,7 +2,7 @@
 {% block content %}
 
 <div class="container mt-5">
-  <h2 class="mb-4">List an Item for Auction</h2>
+  <h1 class="mb-4">List an Item for Auction</h1>
 
   <form method="POST" enctype="multipart/form-data">
     {{ form.hidden_tag() }}
@@ -43,8 +43,8 @@
 
     <!-- Image Upload with Live Preview -->
     <div class="mb-3">
-      {{ form.image.label(class="form-label") }}
-      {{ form.image(class="form-control", id="imageUpload", multiple=True) }}
+      {{ form.image.label(class="form-label", for="imageUpload") }}
+      {{ form.image(class="form-control", id="imageUpload", multiple=True, aria_label="Upload Image") }}
       <small class="form-text text-muted">Upload one or more images (JPG, PNG, GIF).</small>
       <div id="imagePreview" class="mt-3 d-flex flex-wrap"></div>
     </div>
